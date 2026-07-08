@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useId } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface Option {
   label: string;
@@ -26,7 +27,7 @@ interface CustomSelectProps {
 
 export default function CustomSelect({
   label,
-  value,  
+  value,
   placeholder = "— Select —",
   loading = false,
   loadingText = "Loading…",
@@ -34,33 +35,35 @@ export default function CustomSelect({
   disabled = false,
   required = false,
   error,
-  options,
+  options = [],
   onChange,
   onBlur,
   onFocus,
 }: CustomSelectProps) {
-  const uid            = useId();
-  const containerRef   = useRef<HTMLDivElement>(null);
-  const searchRef      = useRef<HTMLInputElement>(null);
-  const listRef        = useRef<HTMLUListElement>(null);
+  const uid = useId();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
-  const [open, setOpen]         = useState(false);
-  const [search, setSearch]     = useState("");
-  const [focused, setFocused]   = useState(false);
+  const [open, setOpen] = useState(false);
+  const [searchVal, setSearchVal] = useState("");
+  const [focused, setFocused] = useState(false);
   const [highlighted, setHighlighted] = useState<number>(-1);
 
+  // Find currently selected option
   const selected = options.find((o) => String(o.value) === String(value ?? ""));
 
+  // Filter options if searchable
   const filtered = searchable
-    ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
+    ? options.filter((o) => o.label.toLowerCase().includes(searchVal.toLowerCase()))
     : options;
 
-  // Close on outside click
+  // Click outside listener to close dropdown
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
-        setSearch("");
+        setSearchVal("");
+        setFocused(false);
         setHighlighted(-1);
       }
     };
@@ -68,19 +71,7 @@ export default function CustomSelect({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Focus search when dropdown opens
-  useEffect(() => {
-    if (open && searchable) {
-      setTimeout(() => searchRef.current?.focus(), 30);
-    }
-    if (open) {
-      // scroll highlighted into view
-      const idx = filtered.findIndex((o) => String(o.value) === String(value ?? ""));
-      setHighlighted(idx);
-    }
-  }, [open]);
-
-  // Scroll highlighted option into view
+  // Sync scrolling of highlighted option
   useEffect(() => {
     if (highlighted >= 0 && listRef.current) {
       const el = listRef.current.children[highlighted] as HTMLElement;
@@ -89,20 +80,18 @@ export default function CustomSelect({
   }, [highlighted]);
 
   const handleSelect = (opt: Option) => {
-    // Synthesise a ChangeEvent so existing onChange handlers work unchanged
-    const nativeSelect = document.createElement("select");
-    const nativeOption = document.createElement("option");
-    nativeOption.value = String(opt.value);
-    nativeSelect.appendChild(nativeOption);
-    nativeSelect.value = String(opt.value);
-    const event = Object.create(new Event("change"), {
-      target:          { value: nativeSelect },
-      currentTarget:   { value: nativeSelect },
-    }) as React.ChangeEvent<HTMLSelectElement>;
-    onChange?.(event);
-
+    if (onChange) {
+      // Mock Event structure to work seamlessly with parent onChange handlers
+      const event = {
+        target: {
+          value: String(opt.value),
+        },
+      } as unknown as React.ChangeEvent<HTMLSelectElement>;
+      onChange(event);
+    }
     setOpen(false);
-    setSearch("");
+    setSearchVal("");
+    setFocused(false);
     setHighlighted(-1);
   };
 
@@ -114,201 +103,166 @@ export default function CustomSelect({
       }
       return;
     }
-    if (e.key === "Escape")     { setOpen(false); setSearch(""); }
-    if (e.key === "ArrowDown")  { e.preventDefault(); setHighlighted((h) => Math.min(h + 1, filtered.length - 1)); }
-    if (e.key === "ArrowUp")    { e.preventDefault(); setHighlighted((h) => Math.max(h - 1, 0)); }
-    if (e.key === "Enter" && highlighted >= 0) {
+
+    if (e.key === "Escape") {
       e.preventDefault();
-      handleSelect(filtered[highlighted]);
+      setOpen(false);
+      setSearchVal("");
+      setHighlighted(-1);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlighted((h) => Math.min(h + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlighted((h) => Math.max(h - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlighted >= 0 && filtered[highlighted]) {
+        handleSelect(filtered[highlighted]);
+      } else if (filtered.length > 0) {
+        // Select the first matching result when Enter is pressed
+        handleSelect(filtered[0]);
+      }
     }
   };
 
-  const isOpen    = open && !disabled && !loading;
-  const hasError  = !!error;
-  const hasValue  = selected !== undefined;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchVal(e.target.value);
+    setHighlighted(0);
+    if (!open) setOpen(true);
+  };
 
-  // ── Styles ──────────────────────────────────────────────────────────
-  // const borderColor = hasError ? "#f87171" : focused || isOpen ? "#10b981" : "rgb(209 250 229)";
-  const borderColor = hasError ? "#f87171" : focused || isOpen ? "#10b981" : "rgb(209, 213, 219)";
-  const boxShadow   = hasError
-    ? "0 0 0 3px rgba(248,113,113,.12)"
-    : focused || isOpen
-      ? "0 0 0 3px rgba(16,185,129,.12)"
-      : "none";
+  const isOpen = open && !disabled && !loading;
+  const hasError = !!error;
+  const hasValue = selected !== undefined;
+
+  // Determine display value for trigger
+  const getInputValue = () => {
+    if (focused || open) {
+      return searchVal;
+    }
+    return selected?.label ?? "";
+  };
 
   return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
-
+    <div ref={containerRef} className="relative w-full">
       {/* Label */}
       {label && (
         <label
           htmlFor={uid}
-          style={{
-            display: "block",
-            marginBottom: 6,
-            fontSize: 11,
-            fontWeight: 700,
-            color: hasError ? "#ef4444" : "#64748b",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}
+          className={`block mb-1.5 text-[11px] font-bold tracking-[0.08em] uppercase ${
+            hasError ? "text-red-500" : "text-slate-500"
+          }`}
         >
           {label}
-          {required && <span style={{ color: "#ef4444", marginLeft: 3 }}>*</span>}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
 
-      {/* Trigger */}
+      {/* Trigger Container */}
       {loading ? (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 14px",
-          border: "1.5px solid #d1d5db",
-          borderRadius: 10, fontSize: 14,
-          background: "#f8fafc", color: "#94a3b8",
-        }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5"
-            style={{ animation: "spin 1s linear infinite", flexShrink: 0 }}>
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-[1.5px] border-slate-200 rounded-[10px] text-sm bg-slate-50 text-slate-400">
+          <svg
+            className="w-3.5 h-3.5 animate-spin flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 12a9 9 0 1 1-6.219-8.56" />
           </svg>
           <span>{loadingText}</span>
         </div>
       ) : (
-        <button
-          id={uid}
-          type="button"
-          disabled={disabled}
-          onClick={() => { if (!disabled) { setOpen((v) => !v); setFocused(true); } }}
-          onFocus={(e) => { setFocused(true);  onFocus?.(e); }}
-          onBlur={(e)  => {
-            // only blur if focus left the whole container
-            if (!containerRef.current?.contains(e.relatedTarget as Node)) {
-              setFocused(false);
-              onBlur?.(e);
-            }
-          }}
-          onKeyDown={handleKeyDown}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-          aria-labelledby={label ? uid : undefined}
-          style={{
-            width: "100%",
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-            padding: "10px 14px",
-            border: `1.5px solid ${borderColor}`,
-            borderRadius: isOpen ? "10px 10px 0 0" : 10,
-            fontSize: 14,
-            fontWeight: hasValue ? 500 : 400,
-            color: hasValue ? "#0f172a" : "#94a3b8",
-            background: disabled ? "#f8fafc" : "#fff",
-            cursor: disabled ? "not-allowed" : "pointer",
-            outline: "none",
-            boxShadow,
-            transition: "border-color .15s, box-shadow .15s, border-radius .1s",
-            textAlign: "left",
-          }}
-        >
-          {/* Selected label or placeholder */}
-          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {selected?.label ?? placeholder}
-          </span>
+        <div className="relative w-full">
+          {searchable ? (
+            <input
+              id={uid}
+              type="text"
+              disabled={disabled}
+              value={getInputValue()}
+              placeholder={selected?.label ?? placeholder}
+              onChange={handleInputChange}
+              onFocus={(e) => {
+                setFocused(true);
+                setOpen(true);
+                onFocus?.(e);
+              }}
+              onBlur={(e) => {
+                // only trigger blur if focus leaves the container
+                if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+                  setFocused(false);
+                  onBlur?.(e);
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              className={`w-full px-3.5 py-2.5 pr-10 border-[1.5px] rounded-[10px] text-sm text-[#0f172a] bg-white outline-none transition-all duration-200 ${
+                isOpen ? "border-[#10b981] ring-2 ring-[#10b981]/10 rounded-b-none" : "border-gray-300"
+              } ${hasError ? "border-red-500 ring-2 ring-red-500/10" : ""} ${
+                disabled ? "opacity-60 cursor-not-allowed bg-slate-50" : "cursor-pointer"
+              }`}
+            />
+          ) : (
+            <button
+              id={uid}
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                if (!disabled) {
+                  setOpen((v) => !v);
+                  setFocused(true);
+                }
+              }}
+              onFocus={(e) => {
+                setFocused(true);
+                onFocus?.(e);
+              }}
+              onBlur={(e) => {
+                if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+                  setFocused(false);
+                  onBlur?.(e);
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 border-[1.5px] rounded-[10px] text-sm outline-none text-left transition-all duration-200 ${
+                hasValue ? "text-[#0f172a] font-medium" : "text-slate-400"
+              } ${isOpen ? "border-[#10b981] ring-2 ring-[#10b981]/10 rounded-b-none" : "border-gray-300"} ${
+                hasError ? "border-red-500 ring-2 ring-red-500/10" : ""
+              } ${disabled ? "opacity-60 cursor-not-allowed bg-slate-50" : "cursor-pointer"}`}
+            >
+              <span className="truncate">{selected?.label ?? placeholder}</span>
+            </button>
+          )}
 
-          {/* Chevron */}
-          <svg
-            width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke={isOpen ? "#10b981" : "#94a3b8"} strokeWidth="2.2" strokeLinecap="round"
-            style={{
-              flexShrink: 0,
-              transform: isOpen ? "rotate(180deg)" : "rotate(0)",
-              transition: "transform .2s, stroke .15s",
-            }}
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
+          {/* Right Chevron Down Icon */}
+          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180 text-[#10b981]" : ""}`}
+            />
+          </div>
+        </div>
       )}
 
-      {/* Error message */}
+      {/* Error Message */}
       {hasError && (
-        <p style={{ margin: "5px 0 0", fontSize: 12, color: "#ef4444", display: "flex", alignItems: "center", gap: 4 }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+        <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           {error}
         </p>
       )}
 
-      {/* Dropdown panel */}
+      {/* Options Dropdown Panel */}
       {isOpen && (
-        <div
-          role="listbox"
-          aria-label={label}
-          style={{
-            position: "absolute", top: "100%", left: 0, right: 0, zIndex: 9999,
-            background: "#fff",
-            border: `1.5px solid #10b981`,
-            borderTop: "none",
-            borderRadius: "0 0 10px 10px",
-            boxShadow: "0 8px 24px rgba(16,185,129,.12), 0 2px 8px rgba(0,0,0,.06)",
-            overflow: "hidden",
-          }}
-        >
-          {/* Search box */}
-          {searchable && (
-            <div style={{
-              padding: "8px 10px",
-              borderBottom: "1.5px solid #f0fdf4",
-              background: "#f8fffe",
-            }}>
-              <div style={{ position: "relative" }}>
-                <svg
-                  style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                  width="13" height="13" viewBox="0 0 24 24" fill="none"
-                  stroke="#94a3b8" strokeWidth="2" strokeLinecap="round"
-                >
-                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-                </svg>
-                <input
-                  ref={searchRef}
-                  type="text"
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setHighlighted(0); }}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Search…"
-                  style={{
-                    width: "100%",
-                    padding: "7px 10px 7px 30px",
-                    border: "1.5px solid #d1fae5",
-                    borderRadius: 7,
-                    fontSize: 13,
-                    outline: "none",
-                    background: "#fff",
-                    color: "#0f172a",
-                    boxSizing: "border-box",
-                  }}
-                  onFocus={(e) => { e.target.style.borderColor = "#10b981"; }}
-                  onBlur={(e)  => { e.target.style.borderColor = "#d1fae5"; }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Options list */}
-          <ul
-            ref={listRef}
-            style={{
-              maxHeight: 220, overflowY: "auto",
-              margin: 0, padding: "4px 0",
-              listStyle: "none",
-            }}
-          >
+        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-[#10b981] border-t-0 rounded-b-[10px] shadow-lg max-h-[220px] overflow-hidden">
+          <ul ref={listRef} className="max-h-[220px] overflow-y-auto py-1 list-none scrollbar-thin">
             {filtered.length === 0 ? (
-              <li style={{ padding: "14px 16px", fontSize: 13, color: "#94a3b8", textAlign: "center" }}>
-                No options found
-              </li>
+              <li className="px-4 py-3 text-sm text-slate-400 text-center">No options found</li>
             ) : (
               filtered.map((opt, idx) => {
-                const isSelected    = String(opt.value) === String(value ?? "");
+                const isSelected = String(opt.value) === String(value ?? "");
                 const isHighlighted = idx === highlighted;
 
                 return (
@@ -316,28 +270,27 @@ export default function CustomSelect({
                     key={String(opt.value)}
                     role="option"
                     aria-selected={isSelected}
-                    onMouseDown={(e) => { e.preventDefault(); handleSelect(opt); }}
-                    onMouseEnter={() => setHighlighted(idx)}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "9px 14px",
-                      fontSize: 14,
-                      fontWeight: isSelected ? 600 : 400,
-                      color: isSelected ? "#059669" : "#1e293b",
-                      background: isSelected
-                        ? "#f0fdf4"
-                        : isHighlighted
-                          ? "#f8fffe"
-                          : "transparent",
-                      cursor: "pointer",
-                      transition: "background .1s",
-                      borderLeft: isSelected ? "3px solid #10b981" : "3px solid transparent",
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelect(opt);
                     }}
+                    onMouseEnter={() => setHighlighted(idx)}
+                    className={`flex items-center justify-between px-4 py-2 text-sm cursor-pointer border-l-2 transition-colors ${
+                      isSelected
+                        ? "bg-emerald-50 text-[#10b981] font-bold border-l-[#10b981]"
+                        : isHighlighted
+                        ? "bg-slate-50 text-slate-800 border-l-slate-200"
+                        : "text-slate-700 border-l-transparent"
+                    }`}
                   >
                     <span>{opt.label}</span>
                     {isSelected && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="#10b981" strokeWidth="2.5" strokeLinecap="round">
+                      <svg
+                        className="w-3.5 h-3.5 text-[#10b981]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     )}
@@ -348,9 +301,6 @@ export default function CustomSelect({
           </ul>
         </div>
       )}
-
-      {/* Spinner keyframe */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

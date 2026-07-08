@@ -25,7 +25,7 @@ import { log } from "node:console";
 import { getImageUrl } from "@/constants/helper";
 
 
-const defaultForm: Employee = {
+const defaultForm: any = {
   _id: "",
   firstName: "",
   lastName: "",
@@ -35,12 +35,12 @@ const defaultForm: Employee = {
   dateOfBirth: "",
   image: null,
 
-  designation: { _id: "", name: "" },
-  department: { _id: "", name: "" },
+  designation: "",
+  department: "",
   joiningDate: "",
   employmentType: "",
 
-  basicSalary: 0,
+  basicSalary: "",
   salaryType: "monthly",
 
   address: "",
@@ -99,7 +99,7 @@ export default function EmployeePage() {
   const [open, setOpen] = useState(false);
   const [salaryOpen, setSalaryOpen] = useState(false);
   const [mode, setMode] = useState<"create" | "edit">("create");
-  const [form, setForm] = useState<Employee>(defaultForm);
+  const [form, setForm] = useState<any>(defaultForm);
 
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null
@@ -225,14 +225,14 @@ export default function EmployeePage() {
 
       image: employee.image ? getImageUrl(employee.image, 'employees') :  null,
 
-      designation: { _id: "", name: "" },
-      department:  { _id: "", name: "" },
+      designation: employee.designation._id || '',
+      department:  employee.department._id || '',
       joiningDate: employee.joiningDate
         ? new Date(employee.joiningDate).toISOString().split("T")[0]
         : "",
       employmentType: employee.employmentType || "",
 
-      basicSalary: employee.basicSalary || 0,
+      basicSalary: employee.basicSalary || "",
       salaryType: employee.salaryType || "monthly",
 
       address: employee.address || "",

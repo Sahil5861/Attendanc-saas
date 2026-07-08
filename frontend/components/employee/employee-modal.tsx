@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import CustomInput from "../common/CustomInput";
+import CustomDatePicker from "../common/CustomDatePicker";
+import CustomTimePicker from "../common/CustomTimePicker";
 import CustomSelect from "../common/CustomSelect";
 import ModalFooter from "../common/ModalFooter";
 import ModalHeader from "../common/ModalHeader";
@@ -69,6 +71,13 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
     setStates(res.data.data);
   }
 
+  const handleChange = (field : string, value: string | File | null | boolean)=>{
+    setForm((prev:any) => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
   useEffect(()=>{
     if(selectedState){
       fetchCities(selectedState)
@@ -120,7 +129,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 placeholder="First Name"
                 value={form.firstName}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, firstName: e.target.value }))
+                  // setForm((p: any) => ({ ...p, firstName: e.target.value }))
+                  handleChange('firstName', e.target.value)
                 }
                 required
               />
@@ -130,7 +140,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 placeholder="Last Name"
                 value={form.lastName}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, lastName: e.target.value }))
+                  // setForm((p: any) => ({ ...p, lastName: e.target.value }))
+                  handleChange('lastName', e.target.value)
                 }
               />
             </div>
@@ -142,7 +153,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 placeholder="Email"
                 value={form.email}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, email: e.target.value }))
+                  // setForm((p: any) => ({ ...p, email: e.target.value }))
+                  handleChange('email', e.target.value)
                 }
                 required
               />
@@ -152,7 +164,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 placeholder="e.g. +91 xxxxx xxxxx"
                 value={form.phone}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, phone: e.target.value }))
+                  // setForm((p: any) => ({ ...p, phone: e.target.value }))
+                  handleChange('phone', e.target.value)
                 }
                 required
               />
@@ -163,7 +176,10 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
 
               <ImageUpload
                 value={form.image}                
-                onChange={(file) => setForm((p: any) => ({ ...p, image: file }))}
+                onChange={(file) => 
+                  // setForm((p: any) => ({ ...p, image: file }))            
+                  handleChange('image',file)  
+                }
               />
             </div>
 
@@ -172,7 +188,7 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 label="Gender"
                 value={form.gender}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, gender: e.target.value }))
+                  handleChange('gender', e.target.value)
                 }
                 options={[
                   { label: "Male", value: "male" },
@@ -181,13 +197,12 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 ]}
               />
 
-              <CustomInput
+              <CustomDatePicker
                 label="Date of Birth"
-                type="date"
                 placeholder="01-01-2001"
                 value={form.dateOfBirth}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, dateOfBirth: e.target.value }))
+                  handleChange('dateOfBirth', e.target.value)
                 }
               />
             </div>
@@ -196,9 +211,10 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
 
               <CustomSelect
                 label="Designation"
-                value={form.designation._id}
+                value={typeof form.designation === "object" && form.designation ? form.designation._id : form.designation}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, designation: e.target.value }))
+                  handleChange('designation', e.target.value)
+                  // setForm((p: any) => ({ ...p, designation: e.target.value }))
                 }
                 options={[
                   {label: '-Select-', value: ''},
@@ -210,9 +226,10 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
 
               <CustomSelect
                 label="Department"
-                value={form.department._id}
+                value={typeof form.department === "object" && form.department ? form.department._id : form.department}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, department: e.target.value }))
+                  handleChange('department', e.target.value)
+                  // setForm((p: any) => ({ ...p, department: e.target.value }))
                 }            
                 options={[
                   {label: '-Select-', value: ''},
@@ -225,12 +242,12 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
 
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 , marginBottom: 20}}>
-              <CustomInput
+              <CustomDatePicker
                 label="Joining Date"
-                type="date"
                 value={form.joiningDate}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, joiningDate: e.target.value }))
+                  // setForm((p: any) => ({ ...p, joiningDate: e.target.value }))
+                    handleChange('joiningDate', e.target.value)
                 }
               />
 
@@ -238,7 +255,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 label="Employment Type"
                 value={form.employmentType}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, employmentType: e.target.value }))
+                  // setForm((p: any) => ({ ...p, employmentType: e.target.value }))
+                  handleChange('employmentType', e.target.value)
                 }
                 options={[
                   { label: "Full Time", value: "full_time" },
@@ -256,7 +274,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 value={form.basicSalary}
                 placeholder="e.g. 15000"
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, basicSalary: Number(e.target.value) }))
+                  // setForm((p: any) => ({ ...p, basicSalary: Number(e.target.value) }))
+                  handleChange('basicSalary', e.target.value)
                 }
                 required
               />
@@ -265,7 +284,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 label="Salary Type"
                 value={form.salaryType}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, salaryType: e.target.value }))
+                  // setForm((p: any) => ({ ...p, salaryType: e.target.value }))
+                  handleChange('salaryType', e.target.value)
                 }
                 options={[
                   { label: "Monthly", value: "monthly" },
@@ -283,7 +303,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 value={form.address}
                 placeholder="e.g. New Delhi"
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, address: e.target.value }))
+                  // setForm((p: any) => ({ ...p, address: e.target.value }))
+                  handleChange('address', e.target.value)
                 }
               />
             </div>
@@ -317,7 +338,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 label="City"
                 value={form.city}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, city: e.target.value }))
+                  // setForm((p: any) => ({ ...p, city: e.target.value }))
+                  handleChange('city', e.target.value)
                 }
                 searchable
                 loading={citiesLoading}
@@ -337,7 +359,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 value={form.country}
                 readonly
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, country: e.target.value }))
+                  // setForm((p: any) => ({ ...p, country: e.target.value }))
+                  handleChange('country', e.target.value)
                 }
               />
 
@@ -346,7 +369,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 placeholder="111111"
                 value={form.pincode}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, pincode: e.target.value }))
+                  // setForm((p: any) => ({ ...p, pincode: e.target.value }))
+                  handleChange('pincode', e.target.value)
                 }
               />
             </div>
@@ -356,25 +380,26 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 label="Shift Name"
                 value={form.shiftName}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, shiftName: e.target.value }))
+                  // setForm((p: any) => ({ ...p, shiftName: e.target.value }))
+                  handleChange('shiftName', e.target.value)
                 }
               />
 
-              <CustomInput
+              <CustomTimePicker
                 label="Start Time"
-                type="time"
                 value={form.shiftStartTime}
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, shiftStartTime: e.target.value }))
+                  // setForm((p: any) => ({ ...p, shiftStartTime: e.target.value }))
+                  handleChange('shiftStartTime', e.target.value)
                 }
               />
 
-              <CustomInput
+              <CustomTimePicker
                 label="End Time"
-                type="time"
-                value={form.shiftEndTime}
+                value={form.shiftEndTime}                
                 onChange={(e) =>
-                  setForm((p: any) => ({ ...p, shiftEndTime: e.target.value }))
+                  // setForm((p: any) => ({ ...p, shiftEndTime: e.target.value }))
+                  handleChange('shiftEndTime', e.target.value)
                 }
               />
             </div>
@@ -390,7 +415,8 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                     maxLength={8}
                     value={form.password}
                     onChange={(e) =>
-                      setForm((p: any) => ({ ...p, password: e.target.value }))
+                      // setForm((p: any) => ({ ...p, password: e.target.value }))
+                      handleChange('password', e.target.value)
                     }
                     required
                   />         
@@ -399,10 +425,11 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                       label="Login Access"
                       value={form.isLoginEnabled ? "true" : "false"}
                       onChange={(e)=>
-                        setForm((p:any)=>({
-                          ...p,
-                          isLoginEnabled:e.target.value==="true"
-                        }))
+                        // setForm((p:any)=>({
+                        //   ...p,
+                        //   isLoginEnabled:e.target.value==="true"
+                        // }))
+                        handleChange('isLoginEnabled', e.target.value == 'true')
                       }
                       options={[
                         { label:"Enabled", value:"true" },
