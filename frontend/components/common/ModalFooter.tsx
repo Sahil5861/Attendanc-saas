@@ -1,6 +1,7 @@
 import { useState } from "react";
 import PrimaryButton from "./PrimaryButton";
 import SecondaryButton from "./SecondaryButton";
+import { Plus } from "lucide-react";
 
 interface Props {
   onSubmit?: () => void;
@@ -31,6 +32,7 @@ export default function ModalFooter({
 
               <PrimaryButton
                 btnType="submit"
+                icon={<Plus size={13}/>}
                 title={title}
                 onClick={ async ()=>{
                   try {

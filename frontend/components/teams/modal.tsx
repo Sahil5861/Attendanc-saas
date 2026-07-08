@@ -48,8 +48,6 @@ export default function Modal({ open, mode, employees, form, setForm, onClose, o
 
     const [search, setSearch] = useState("");
 
-    console.log("Employees in modal:", employees);
-
     const generateSlug = (text: string) => {
         return text.toLocaleLowerCase().trim()
             .replace(/[^a-z0-9\s-]/g, "")
@@ -146,8 +144,7 @@ export default function Modal({ open, mode, employees, form, setForm, onClose, o
                                     teamLead: e.target.value,
                                 }))
                             }
-                            options={[
-                                {label: '-Select-', value: ''},
+                            options={[                                
                                 ...employees.map((employee) => (
                                     {label: `${employee.firstName} ${employee.lastName}`, value: `${employee.firstName} ${employee.lastName}`}
                                 ))

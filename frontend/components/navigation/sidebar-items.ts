@@ -127,13 +127,7 @@ export const sidebarItems = {
           href: "/branch/teams",
           icon: Users,
           hasAccess: "manage-teams",
-        },
-        {
-          title: "Shifts",
-          href: "/branch/shifts",
-          icon: Clock3,
-          hasAccess: "manage-employees",
-        },
+        },        
       ],
     },
 
@@ -163,31 +157,31 @@ export const sidebarItems = {
       ],
     },
 
-    {
-      title: "Payroll",
-      icon: Wallet,
-      children: [
-        {
-          title: "Salary",
-          href: "/branch/salary",
-          icon: Wallet,
-          hasAccess: "manage-payroll",
-        },
-        {
-          title: "Payslips",
-          href: "/branch/payslips",
-          icon: FileText,
-          hasAccess: "manage-payroll",
-        },
-      ],
-    },
+    // {
+    //   title: "Payroll",
+    //   icon: Wallet,
+    //   children: [
+    //     {
+    //       title: "Salary",
+    //       href: "/branch/salary",
+    //       icon: Wallet,
+    //       hasAccess: "manage-payroll",
+    //     },
+    //     {
+    //       title: "Payslips",
+    //       href: "/branch/payslips",
+    //       icon: FileText,
+    //       hasAccess: "manage-payroll",
+    //     },
+    //   ],
+    // },
 
-    {
-      title: "Reports",
-      href: "/branch/reports",
-      icon: FileBarChart2,
-      hasAccess: "reports",
-    },
+    // {
+    //   title: "Reports",
+    //   href: "/branch/reports",
+    //   icon: FileBarChart2,
+    //   hasAccess: "reports",
+    // },
 
     {
       title: "Plans & Billing",

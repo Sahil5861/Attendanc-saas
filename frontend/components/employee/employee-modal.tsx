@@ -216,8 +216,7 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                   handleChange('designation', e.target.value)
                   // setForm((p: any) => ({ ...p, designation: e.target.value }))
                 }
-                options={[
-                  {label: '-Select-', value: ''},
+                options={[                  
                   ...designations.map((designation)=>(
                     {label: designation.title, value: designation._id}
                   ))
@@ -231,8 +230,7 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                   handleChange('department', e.target.value)
                   // setForm((p: any) => ({ ...p, department: e.target.value }))
                 }            
-                options={[
-                  {label: '-Select-', value: ''},
+                options={[                  
                   ...departments.map((department)=>(
                     {label: department.title, value: department._id}
                   ))
@@ -324,8 +322,7 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 value={form.state}              
                 onChange={(e) => handleStateChange(e.target.value)}
                 searchable
-                options={[
-                  {label: '-Select-', value: ''},
+                options={[                  
                   ...states.map((state)=>(
                     {label:state.name, value:state.stateId}
                   ))
@@ -343,8 +340,7 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
                 }
                 searchable
                 loading={citiesLoading}
-                options={[
-                  {label: '-Select-', value: ''},
+                options={[                  
                   ...cities.map((city)=>(
                     {label: city.name, value:city.cityId}
                   ))
@@ -375,14 +371,28 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 3fr 3fr", gap: 16 , marginBottom: 20}}>
-              <CustomInput
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 , marginBottom: 20}}>
+              {/* <CustomInput
                 label="Shift Name"
                 value={form.shiftName}
                 onChange={(e) =>
                   // setForm((p: any) => ({ ...p, shiftName: e.target.value }))
                   handleChange('shiftName', e.target.value)
                 }
+              /> */}
+
+              <CustomSelect
+                label="Shift Name"
+                value={form.shiftName}
+                onChange={(e) =>
+                  // setForm((p: any) => ({ ...p, shiftName: e.target.value }))
+                  handleChange('shiftName', e.target.value)
+                }
+
+                options={[                  
+                  {label: 'Morning', value: 'Morning'},
+                  {label: 'Evening', value: 'Evening'},
+                ]}
               />
 
               <CustomTimePicker
@@ -444,7 +454,7 @@ export default function EmployeeModal({ open, mode, form, setForm, onClose, onSu
           {/* Footer */}
           <ModalFooter
             onClose={onClose}
-            title={mode == 'edit' ? 'Save Cahnges' : 'Add'}
+            title={mode == 'edit' ? 'Save Cahnges' : 'Crete Employee'}
             onSubmit={onSubmit}
           />
         {/* <form onSubmit={onSubmit}>

@@ -43,8 +43,8 @@ interface EmployeeAttendanceRecord {
   _id?: string;
   attendanceDate: string;
   status: "present" | "absent" | "onLeave" | string;
-  checkIn?: string;
-  checkOut?: string;
+  checkin?: string;
+  checkout?: string;
   workingHours?: number;
 }
 
@@ -188,8 +188,8 @@ export default function AttendancePage() {
         month: date.getMonth(),
         year: date.getFullYear(),
         status,
-        checkIn: record.checkIn || '',
-        checkOut: record.checkOut || '',
+        checkIn: record.checkin || '',
+        checkOut: record.checkout || '',
         workingHours: record.workingHours || '',
       });
     }
@@ -229,6 +229,8 @@ export default function AttendancePage() {
   const handleEditAttendance = () => {
     setOpen(true);
 
+    console.log('selectedAttendance : ', selectedAttendance);
+    
     setForm({
       id: selectedAttendance.id,
       checkIn: formatTimeForInput(selectedAttendance?.checkIn),
@@ -697,7 +699,6 @@ export default function AttendancePage() {
                   Edit Attendance
                 </button>
               </div>
-
             </div>
           </div>
         )}

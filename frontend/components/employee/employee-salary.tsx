@@ -189,8 +189,9 @@ export default function SalaryModal({
     });
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex justify-end z-50">
+
+            <div className="w-[520px] bg-white h-full shadow-2xl flex flex-col animate-[slideIn_s_ease-out]">
                 {/* Header (existing ModalHeader component — designation bug fixed via getDesignationLabel) */}
                 <ModalHeader
                     title={`${employee.firstName} ${employee.lastName}`}
@@ -332,9 +333,6 @@ export default function SalaryModal({
                         </>
                     )}
                 </div>
-
-                {/* Footer */}
-                <ModalFooter onClose={onClose} />
             </div>
         </div>
     );

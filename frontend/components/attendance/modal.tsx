@@ -5,6 +5,7 @@ import CustomInput from "../common/CustomInput";
 import CustomSelect from "../common/CustomSelect";
 import ModalFooter from "../common/ModalFooter";
 import ModalHeader from "../common/ModalHeader";
+import CustomTimePicker from "../common/CustomTimePicker";
 
 interface Props {
   open: boolean;
@@ -23,6 +24,8 @@ interface Props {
 export default function Modal({ open, mode, form, setForm, onClose, onSubmit }: Props) {
   if (!open) return null;
 
+  console.log('form : ', form);
+  
   const [presentStatus, setPresentStatus] = useState(form.status);
 
 
@@ -30,15 +33,15 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit }: 
   const handleChange = (field:string, value: string) =>{
     setForm((prev:any) => ({
       ...prev, 
-      field: value,      
+      [field]: value,      
     }))
   }
 
 
   const handleStatusChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    value: string
   )=>{
-    const status = e.target.value;
+    const status = value;
 
     setForm((prev:any) => ({
       ...prev, 
@@ -81,10 +84,9 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit }: 
               label="Status"
               value={form.status}
               // onChange={(e) => setForm((p:any) => ({...p, status: e.target.value}))}
-              onChange={() => handleStatusChange}
+              onChange={(e) => handleStatusChange(e.target.value)}
               searchable
-              options={[
-                { label: "Select Status", value: "" },
+              options={[                
                 {label: "Present", value:'present'},                
                 {label: "Absent", value:'absent'},                
                 {label: "On Leave", value:'onLeave'},                
@@ -95,19 +97,29 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit }: 
 
           {presentStatus == 'present' && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <CustomInput
+              {/* <CustomInput
                 label="Check in time"
                 type="time"
                 value={form.checkIn}                           
                 onChange={(e) => handleChange('checkIn', e.target.value)}                           
+              /> */}
+
+              <CustomTimePicker
+                label="Check in time"
+                value={form.checkIn}                
+                onChange={(e) =>           
+                  handleChange('checkIn', e.target.value)
+                }
               />
 
-              <CustomInput
+              <CustomTimePicker
                 label="Check out time"
-                type="time"
-                value={form.checkOut}   
-                onChange={(e) => handleChange('checkOut', e.target.value)}        
-              />           
+                value={form.checkOut}                
+                onChange={(e) =>           
+                  handleChange('checkOut', e.target.value)
+                }
+              />
+   
             </div>
           )}
         </div>
