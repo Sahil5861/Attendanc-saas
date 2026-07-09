@@ -60,8 +60,8 @@ const userSchema = new mongoose.Schema(
     },
 
     roleId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Role"
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role"
     },
 
     status: {
@@ -72,6 +72,13 @@ const userSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
       default: null,
+    },
+
+    otp: {
+      type: String,
+    },
+    otpExpiresAt: {
+      type: Date
     },
 
     createdBy: {

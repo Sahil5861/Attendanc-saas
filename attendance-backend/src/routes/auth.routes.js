@@ -2,7 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const {login, getCaptcha, initiate, verifyOtp, resendOtp } = require("../controllers/auth.controller");
+const {login, getCaptcha, initiate, verifyOtp, resendOtp, sendForgotPasswordOtp, verifyForgotPasswordOtp, resetPassword } = require("../controllers/auth.controller");
 const {me} = require("../controllers/auth.controller");
 const authMiddleware = require("../middleware/auth.middleware");
 
@@ -18,5 +18,13 @@ router.get("/getNewCaptcha/:length", getCaptcha);
 
 router.post("/verifyOtp", verifyOtp);
 router.post("/resendOtp", resendOtp);
+
+
+// forgot password
+
+router.post("/sendForgotPasswordOtp", sendForgotPasswordOtp);
+router.post("/verifyForgotPasswordOtp", verifyForgotPasswordOtp);
+router.post("/resetPassword", resetPassword);
+
 
 module.exports = router;

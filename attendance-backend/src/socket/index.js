@@ -48,16 +48,7 @@ const initSocket = (httpServer) => {
 
 
         console.log("========================================");
-        console.log("New socket connected:", socket.id);
-        console.log("Decoded JWT user:", socket.user);
-        console.log("branchId from token:", branchId);
-        console.log("branchId from socket auth:", activeBranchId);
-        // Branch-level room — branch admins/managers listen here
-        if (roomBranchId) {
-            console.log("Joining room:", `branch:${roomBranchId}`)
-            socket.join(`branch:${roomBranchId}`);
-        }
-
+        // Branch-level room — branch admins/managers listen here        
         if (id) {
             socket.join(`user:${id}`);
         }
@@ -75,8 +66,6 @@ const initSocket = (httpServer) => {
             if (!targetBranchId) {
                 return;
             }
-
-            console.log("Joining room by client event:", `branch:${targetBranchId}`);
             socket.join(`branch:${targetBranchId}`);
         });
 

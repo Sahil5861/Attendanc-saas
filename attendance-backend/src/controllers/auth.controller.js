@@ -164,7 +164,7 @@ exports.initiate = async (req, res) => {
         let source = fs.readFileSync(filePath, "utf8");
 
         const template = Handlebars.compile(source);
-        
+
         const html = template({
             otp
         });
@@ -203,39 +203,39 @@ exports.initiate = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
- 
+
         if (!email || !otp) {
             return res.status(400).json({
                 success: false,
                 message: "Email and OTP are required",
             });
         }
- 
+
         const lead = await Lead.findOne({ email, status: "pending" });
- 
+
         if (!lead) {
             return res.status(400).json({
                 success: false,
                 message: "No pending signup found for this email. Please sign up again.",
             });
         }
- 
+
         if (lead.otpExpiresAt < new Date()) {
             return res.status(400).json({
                 success: false,
                 message: "OTP has expired. Please request a new one.",
             });
         }
- 
+
         const isValid = await bcrypt.compare(otp, lead.otp);
- 
+
         if (!isValid) {
             return res.status(400).json({
                 success: false,
                 message: "Incorrect OTP",
             });
         }
- 
+
         // Double-check no account slipped in between initiate & verify
         const existingUser = await User.findOne({ email: lead.email });
         if (existingUser) {
@@ -244,7 +244,7 @@ exports.verifyOtp = async (req, res) => {
                 message: "An account with this email already exists. Please login instead.",
             });
         }
- 
+
         // ── Create the actual account ──
         // A temporary password is generated since the signup form only collected
         // company name/email/phone — the user resets/uses this on first login.
@@ -253,32 +253,32 @@ exports.verifyOtp = async (req, res) => {
         const tempPassword = crypto.randomBytes(4).toString("hex"); // 8-char temp password
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         const code = Math.floor(1000 + Math.random() * 9000).toString();
-        
+
         // ⚠️ Adjust this block to your actual Company/Role/User creation logic
         const company = await Company.create({
             companyName: lead.companyName,
             ownerName: lead.companyName,
-            companyCode : code,
+            companyCode: code,
             email: lead.email,
             phone: lead.phone,
         });
- 
+
         const adminRole = await Role.findOne({ name: "COMPANY_ADMIN" });
- 
+
         const user = await User.create({
             email: lead.email,
             password: hashedPassword,
             realPassword: tempPassword,
-            name:lead.companyName,
+            name: lead.companyName,
 
             companyId: company._id,
             roleId: adminRole?._id,
             role: "COMPANY_ADMIN",
         });
- 
+
         lead.status = "completed";
         await lead.save();
- 
+
         // ── Send success email ──
         const filePath = path.join(__dirname, "../templates/registration-success.html");
         const source = fs.readFileSync(filePath, "utf8");
@@ -288,7 +288,7 @@ exports.verifyOtp = async (req, res) => {
             email: lead.email,
             tempPassword,
         });
- 
+
 
         await transporter.sendMail({
             from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
@@ -296,12 +296,12 @@ exports.verifyOtp = async (req, res) => {
             subject: "Welcome to AttendSaaS — your account is ready",
             html,
         });
- 
+
         const token = generateToken(user);
         const permissions = await getUserPermissions(user);
         const plan = await getCurrentPlan(user);
 
- 
+
         return res.status(200).json({
             success: true,
             message: "Account created successfully",
@@ -319,23 +319,27 @@ exports.verifyOtp = async (req, res) => {
     }
 };
 
-exports.resendOtp = async(req, res) =>{
-    try{
-        const {email} = req.body;
+function generateOtp() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+exports.resendOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
 
         const lead = await Lead.findOne({
-            email: email,      
-            status: 'pending',      
+            email: email,
+            status: 'pending',
         });
 
-        if(!lead) {
-                        
+        if (!lead) {
+
             return res.status(200).json({
                 success: false, message: 'No pending signup found for this email. Please sign up again.'
             })
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = generateOtp();
         lead.otp = await bcrypt.hash(otp, 10);
         lead.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
         await lead.save();
@@ -347,7 +351,7 @@ exports.resendOtp = async(req, res) =>{
         const html = template({ otp });
 
         const leademail = 'sahilkhan05861@gmail.com';
- 
+
         await transporter.sendMail({
             from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
             to: leademail,
@@ -361,7 +365,7 @@ exports.resendOtp = async(req, res) =>{
             message: "A new OTP has been sent to your email",
         });
     }
-    catch(error){
+    catch (error) {
         console.error(error);
         return res.status(500).json({
             success: false,
@@ -399,4 +403,156 @@ exports.getCaptcha = async (req, res) => {
             success: false, message: error.message,
         });
     }
+}
+
+
+exports.sendForgotPasswordOtp = async (req, res) => {
+
+    try {
+        console.log('body : ', req.body);
+
+
+        const { email } = req.body;
+
+        const user = await User.findOne({
+            email: email
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false, message: ' User not found'
+            });
+        }
+
+        const otp = generateOtp();
+
+        user.otp = await bcrypt.hash(otp, 10);
+        user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await user.save();
+
+        const filePath = path.join(__dirname, "../templates/forgot-otp.html");
+        const source = fs.readFileSync(filePath, "utf8");
+        const template = Handlebars.compile(source);
+        const html = template({ otp });
+
+        const leademail = 'sahilkhan05861@gmail.com';
+
+        await transporter.sendMail({
+            from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
+            to: leademail,
+            subject: "Your new verification code to reset password",
+            html,
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "OTP has been sent to youe email",
+        });
+
+    }
+    catch (error) {
+        console.error(error);
+        return res.status(500).json(error.message);
+    }
+}
+
+
+exports.verifyForgotPasswordOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+
+        const user = await User.findOne({
+            email: email
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                messahe: 'Invalid User'
+            });
+        }
+        else if (user.otpExpiresAt < new Date()) {
+            return res.status(400).json({
+                success: false,
+                message: 'OTP expired'
+            });
+        }
+
+        const isValid = await bcrypt.compare(otp, user.otp);
+
+        if (isValid) {
+            return res.status(200).json({
+                success: true, messahe: 'OTP verifies successfully !'
+            })
+        }
+        else {
+            return res.status(400).json({
+                success: false, message: 'Invalid OTP'
+            });
+        }
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false, message: error.message
+        })
+    }
+}
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, password, confirmPassword } = req.body;
+
+        if (!password) {
+            return res.status(400).json({
+                success: false, message: 'Passord is required'
+            })
+        }
+
+        if (!confirmPassword) {            
+            return res.status(400).json({
+                success: false, message: 'Confirm Passord is required'
+            })
+
+        }
+
+
+        if (password !== confirmPassword) {
+            return res.status(400).json({
+                success: fale, message: 'Pasword and confirm password is not match'
+            })
+        }
+
+
+        const user = await User.findOne({
+            email
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                messahe: 'User not found'
+            })
+        }
+
+        
+        const hashedPassword =await bcrypt.hash(password,10);
+        
+        user.realPassword = password;
+        user.password = hashedPassword;
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true, message: 'Password resets successfully !'
+        });
+
+    }
+
+
+    catch (error) {
+            return res.status(500).json({
+                success: false, message: error.message
+            })
+        }
 }

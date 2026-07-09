@@ -54,7 +54,8 @@ export default function SignupPage() {
       if (response?.data?.success) {
         toast.success(response.data.message || "OTP sent to your email");
         // Adjust this route to wherever your OTP-verification step lives
-        router.push(`/verify-otp?email=${encodeURIComponent(form.email)}`);
+        // router.push(`/verify-otp?email=${encodeURIComponent(form.email)}`);
+        router.push(`/verify-otp/${encodeURIComponent(form.email)}`);
       } else {
         toast.error(response?.data?.message || "Failed to send OTP");
         captchaRef.current?.refresh();

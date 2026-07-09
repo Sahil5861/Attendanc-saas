@@ -27,3 +27,9 @@ export const verifyOtp = async(data: any) => api.post('/auth/verifyOtp', data);
 export const resendOtp = async(data: any) => api.post('/auth/resendOtp', data);
 
 export const getNewCaptcha = async(length:number) => api.get(`/auth/getNewCaptcha/${length}`);
+
+
+// forgot password
+export const sendForgotPasswordOtp = async(data:any) => api.post('/auth/sendForgotPasswordOtp', data);
+export const verifyForgotPasswordOtp = async(data:any) => api.post('/auth/verifyForgotPasswordOtp',data);
+export const resetPassword = async(data:any) => api.post('/auth/resetPassword',data);

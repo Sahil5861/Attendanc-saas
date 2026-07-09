@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import CustomInput from "../common/CustomInput";
 import CustomSelect from "../common/CustomSelect";
 import PrimaryButton from "../common/PrimaryButton";
 import SecondaryButton from "../common/SecondaryButton";
+import toast from "react-hot-toast";
+import { getCitiesByState, getStates } from "@/services/super-admin.service";
 
 interface Props {
   open: boolean;
@@ -25,7 +28,87 @@ interface Props {
 }
 
 export default function BranchModal({ open, mode, form, setForm, onClose, onSubmit }: Props) {
+
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
+
   if (!open) return null;
+
+
+  const updateCities = async (stateId: string) => {
+    try {
+      setCitiesLoading(true);
+      const response = await getCitiesByState(stateId);
+
+      setCities(response.data.data || []);
+      setCitiesLoading(false);
+
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  const handleStateChange = (
+    value: string
+  ) => {
+    const stateId = value;
+
+    setForm((prev: any) => ({
+      ...prev,
+      state: stateId,
+      city: "", // reset city when state changes
+    }));
+
+    updateCities(stateId);
+  };
+
+
+  const handleChange = (feild:string, value: string) => {
+      setForm((prev:any) => ({
+        ...prev, 
+        [feild]: value
+      }))
+  }
+
+
+
+  const fetchStates = async () => {
+
+    try {
+      setLoading(true);
+      const response = await getStates();
+
+      const data = response.data;
+      setStates(data.data || [])
+
+    } catch (error) {
+      console.log('error : ', error);
+      toast.error('Something went wrong !!');
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    const loadStates = async () => {
+      await fetchStates();
+    };
+
+    loadStates();
+  }, []);
+
+  useEffect(() => {
+    if (open && form.state) {
+      updateCities(form.state);
+    }
+  }, [open, form.state]);
+
 
   return (
     <div
@@ -46,10 +129,10 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
 
         {/* Header */}
         <div style={{
-            padding: "22px 28px 18px",
-            borderBottom: "1.5px solid #f0fdf4",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
+          padding: "22px 28px 18px",
+          borderBottom: "1.5px solid #f0fdf4",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#0f172a" }}>
               {mode === "edit" ? "Edit Branch" : "Add Branch"}
@@ -80,43 +163,60 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
               label="Branch Name"
               type="text"
               value={form.branchName}
-              onChange={(e) => setForm((p: any) => ({ ...p, branchName: e.target.value }))}
+              // onChange={(e) => setForm((p: any) => ({ ...p, branchName: e.target.value }))}
+              onChange={(e) => handleChange('branchName', e.target.value)}
               placeholder="e.g. Connaught Place Branch"
             />
             <CustomInput
               label="Branch Owner Name"
               type="text"
               value={form.branchOwnerName}
-              onChange={(e) => setForm((p: any) => ({ ...p, branchOwnerName: e.target.value }))}
+              // onChange={(e) => setForm((p: any) => ({ ...p, branchOwnerName: e.target.value }))}
+              onChange={(e) => handleChange('branchOwnerName', e.target.value)}
               placeholder="e.g. Rahul Sharma"
             />
           </div>
 
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 16 }}>
+            <CustomInput
+              label="Location"
+              type="text"
+              value={form.location}
+              // onChange={(e) => setForm((p: any) => ({ ...p, location: e.target.value }))}
+              onChange={(e) => handleChange('location', e.target.value)}
+              placeholder="e.g. Main Market Road"
+            />
+          </div>
 
-          <CustomInput
-            label="Location"
-            type="text"
-            value={form.location}
-            onChange={(e) => setForm((p: any) => ({ ...p, location: e.target.value }))}
-            placeholder="e.g. Main Market Road"
-          />
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <CustomInput
-              type="text"
-              label="City"
-              onChange={(e) => setForm((p: any) => ({ ...p, city: e.target.value }))}
-              value={form.city}
+            <CustomSelect
+              label="State"
+              value={form.state}
+              onChange={(e) => handleStateChange(e.target.value)}
+              searchable
+              options={[
+                ...(states ?? []).map((state: any) => ({
+                  label: state.name,
+                  value: state.stateId,
+                })),
+              ]}
             />
 
-            <div>
-              <CustomInput
-                type="text"
-                label="State"
-                onChange={(e) => setForm((p: any) => ({ ...p, state: e.target.value }))}
-                value={form.state}
-              />
-            </div>
+            <CustomSelect
+              label="City"
+              loading={citiesLoading}
+              value={form.city}
+              // onChange={(e) => setForm((p: any) => ({ ...p, city: e.target.value }))}
+              onChange={(e) => handleChange('city', e.target.value)}
+              searchable
+              options={[
+                ...(cities ?? []).map((city: any) => ({
+                  label: city.name,
+                  value: city.cityId,
+                }))
+              ]}
+            />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -124,7 +224,8 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
               label="Mobile Number"
               type="tel"
               value={form.mobileNumber}
-              onChange={(e) => setForm((p: any) => ({ ...p, mobileNumber: e.target.value }))}
+              // onChange={() => setForm((p: any) => ({ ...p, mobileNumber: e.target.value }))}
+              onChange={(e) => handleChange('mobileNumber', e.target.value)}
               placeholder="e.g. 9876543210"
             />
 
@@ -133,7 +234,8 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
                 label="Email"
                 type="email"
                 value={form.email}
-                onChange={(e) => setForm((p: any) => ({ ...p, email: e.target.value }))}
+                // onChange={(e) => setForm((p: any) => ({ ...p, email: e.target.value }))}
+                onChange={(e) => handleChange('email', e.target.value)}
                 placeholder="e.g. email@gmail.com"
               />
             )}
@@ -143,7 +245,8 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
                 label="Password"
                 type="password"
                 value={form.password}
-                onChange={(e) => setForm((p: any) => ({ ...p, password: e.target.value }))}
+                // onChange={(e) => setForm((p: any) => ({ ...p, password: e.target.value }))}
+                onChange={(e) => handleChange('password', e.target.value)}
                 placeholder="e.g. 9876543210"
               />
             )}
@@ -151,7 +254,8 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
             <CustomSelect
               label="Status"
               value={form.status ? "true" : "false"}
-              onChange={(e) => setForm((p: any) => ({ ...p, status: e.target.value === "true" }))}
+              // onChange={(e) => setForm((p: any) => ({ ...p, status: e.target.value === "true" }))}
+              onChange={(e) => handleChange('status', e.target.value)}
               options={[
                 {
                   label: "Active",
@@ -180,6 +284,7 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
 
           <PrimaryButton
             title={mode === "edit" ? "Save Changes" : "Add Branch"}
+            loading={loading}
             onClick={onSubmit}
           />
         </div>

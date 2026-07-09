@@ -619,11 +619,6 @@ exports.chekoutEmployee = async (req, res) => {
 
 
 
-
-
-
-
-
 exports.updateAttendance = async (req, res) => {
     try {
         const { id, employeeId, checkIn, checkOut, attendanceDate, status, workingHours } = req.body;

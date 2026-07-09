@@ -33,6 +33,7 @@ interface Plan {
     yearlyPrice: number;
     isCustom: boolean;
     status: boolean;
+    billingCycle: string;
     features: Feature[];
 }
 
@@ -41,6 +42,7 @@ interface BranchPlanRelation {
     branch_id: string;
     plan_id: string;
     status: "active" | "expired";
+    billingCycle: "monthly" | "yearly";
     createdAt?: string;
 }
 
@@ -62,9 +64,6 @@ export default function BranchPlansPage() {
     const [assigning, setAssigning] = useState(false);
 
 
-
-    const user = useSelector((state: RootState) => state.auth.user);
-
     const branchId: string = Cookies.get("active_branch_id") || "";
 
     // ── Load plans + current active plan ──────────────────────────────────
@@ -81,6 +80,7 @@ export default function BranchPlansPage() {
 
             setPlans((plansRes.data.data || []).filter((p: Plan) => p.status !== false));
             setCurrentPlan(activeRes.data.data || null);
+            setBillingCycle(activeRes.data.data.billingCycle)
         } catch {
             toast.error("Failed to load plans");
         } finally {
@@ -112,95 +112,6 @@ export default function BranchPlansPage() {
     };
 
     // ── Confirm assignment ─────────────────────────────────────────────────
-
-
-    // const handlePayment = async (price: number, branchId: string, planId:string, billingCycle:string): Promise<any> => {
-    //     return new Promise(async (resolve, reject) => {
-    //         try {
-    //             setLoading(true);
-
-    //             const loaded = await loadRazorpayScript();
-    //             if (!loaded) {
-    //                 reject(new Error("Unable to load Razorpay SDK"));
-    //                 return;
-    //             }
-
-    //             const payload=  {
-    //                 amount: price,
-    //                 branch_id: branchId,
-    //                 plan_id: planId,
-    //                 billingCycle: billingCycle
-    //             };
-
-    //             const response = await createOrder(payload);
-    //             const order = response.data;
-    //             console.log("order:", order);
-
-    //             const options = {
-    //                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-    //                 amount: order.amount,
-    //                 currency: order.currency,
-    //                 order_id: order.id,
-    //                 name: "My Company",
-    //                 description: "Payment",
-
-    //                 handler: async function (razorpayResponse: any) {
-    //                     console.log("Payment Success", razorpayResponse);
-
-    //                     try {
-    //                         const base_url = process.env.NEXT_PUBLIC_API_URL;
-
-    //                         const verify = await fetch(`${base_url}/payments/verify-payment`, {
-    //                             method: "POST",
-    //                             headers: { "Content-Type": "application/json" },
-    //                             body: JSON.stringify(razorpayResponse),
-    //                         });
-
-    //                         const data = await verify.json(); // ✅ FIX 1: await missing tha
-
-    //                         if (data.success) {
-    //                             resolve(razorpayResponse); // ✅ FIX 2: undefined 'response' variable tha
-    //                         } else {
-    //                             reject(new Error("Payment verification failed"));
-    //                         }
-    //                     } catch (err) {
-    //                         reject(err);
-    //                     }
-    //                 },
-
-    //                 prefill: {
-    //                     name: "Sahil",
-    //                     email: "test@example.com",
-    //                     contact: "9999999999",
-    //                 },
-
-    //                 theme: { color: "#3399cc" },
-
-    //                 // ✅ FIX 3: modal close hone par reject karo — warna handleConfirmAssign
-    //                 //    hang karta rahega promise resolve/reject ke bina
-    //                 modal: {
-    //                     ondismiss: () => {
-    //                         reject(new Error("Payment cancelled by user"));
-    //                     },
-    //                 },
-    //             };
-
-    //             const razorpay = new window.Razorpay(options);
-
-    //             razorpay.on("payment.failed", function (resp: any) {
-    //                 console.error(resp.error);
-    //                 reject(new Error(resp.error?.description || "Payment failed"));
-    //             });
-
-    //             razorpay.open();
-    //         } catch (err) {
-    //             reject(err);
-    //         } finally {
-    //             setLoading(false);
-    //         }
-    //     });
-    // };
-
     const handlePayment = async (price: number, branchId: string, planId:string, planName:string, billingCycle:string) => {
         try {
             setLoading(true);
@@ -236,9 +147,7 @@ export default function BranchPlansPage() {
             console.log('order: ', order);
 
 
-            return;
-
-
+            // return;
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
@@ -264,8 +173,6 @@ export default function BranchPlansPage() {
 
                     alert("Payment Successful");
                     toast.success(`${planName} assigned successfully`);
-
-
                 },
 
                 prefill: {
@@ -275,7 +182,8 @@ export default function BranchPlansPage() {
                 },
 
                 theme: {
-                    color: "#3399cc",
+                    // color: "#3399cc",
+                    color: "#0f172a"
                 },
             };
 
@@ -324,7 +232,14 @@ export default function BranchPlansPage() {
     };
 
 
-    const isCurrentPlan = (planId: string) => currentPlan?.plan_id === planId && currentPlan?.status === "active";
+    const isCurrentPlan = (planId: string, cycle: "monthly" | "yearly") => {
+
+        return (
+            currentPlan?.plan_id === planId && 
+            currentPlan?.status === "active" &&
+            currentPlan?.billingCycle === cycle
+        )
+    } 
 
     // ── Render ────────────────────────────────────────────────────────────
     return (
@@ -417,7 +332,7 @@ export default function BranchPlansPage() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
                     {plans.map((plan) => {
                         const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
-                        const isCurrent = isCurrentPlan(plan._id);
+                        const isCurrent = isCurrentPlan(plan._id, billingCycle);
                         const isPopular = !plan.isCustom && plan.name.toLowerCase().includes("growth");
 
                         return (

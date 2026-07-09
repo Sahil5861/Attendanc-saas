@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import CompanyHeader from "./employee-header";
 import { Edit2, Eye, Trash2 } from "lucide-react";
 import Button from "../common/Button";
+import CustomToggle from "../common/CustomToggle";
+import { updateEmployeeStatus } from "@/services/branch.service";
+import toast from "react-hot-toast";
 
 export interface Employee {
   _id: string;
@@ -68,6 +71,11 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 }
 
 export default function Table({ employees, loading, onCreate, onEdit, onView, onDelete, onViewSalary }: Props) {
+
+  const [employeeList, setEmployeeList] = useState(employees);
+
+
+
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("firstName");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -81,15 +89,47 @@ export default function Table({ employees, loading, onCreate, onEdit, onView, on
     setPage(1);
   };
 
+  useEffect(() => {
+    setEmployeeList(employees);
+  }, [employees]);
+
+
+  const updateEmployee = async (id: string, value: boolean) => {
+
+    try {
+
+      const payload = {
+        status: value,
+      };
+      const res = await updateEmployeeStatus(id, payload);
+
+      if (res?.data.success == true) {
+
+        setEmployeeList(prev => 
+          prev.map(emp => 
+            emp._id === id ? {...emp, status: value} : emp
+          )
+        )
+        toast.success(res.data.message || "Employee status updated successfully.");
+      }
+      else {
+        toast.error(res.data.message || "Failed to update employee status.");
+      }
+
+    } catch (error) {
+        toast.error(error.message);
+    }
+  }
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return employees.filter(c =>
+    return employeeList.filter(c =>
       c.firstName?.toLowerCase().includes(q) ||
       c.lastName?.toLowerCase().includes(q) ||
       c.email?.toLowerCase().includes(q) ||
       c.phone?.includes(q)
     );
-  }, [employees, search]);
+  }, [employeeList, search]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -115,6 +155,9 @@ export default function Table({ employees, loading, onCreate, onEdit, onView, on
     background: "#f8fffe",
     borderBottom: "1.5px solid #d1fae5",
   });
+
+
+
 
   return (
     <div>
@@ -207,7 +250,7 @@ export default function Table({ employees, loading, onCreate, onEdit, onView, on
 
                     {/* Status */}
                     <td style={{ padding: "16px 18px" }}>
-                      <span style={{
+                      {/* <span style={{
                         display: "inline-flex", alignItems: "center", gap: 5,
                         background: employee.status === false ? "#fef2f2" : "#dcfce7",
                         color: employee.status === false ? "#dc2626" : "#15803d",
@@ -220,7 +263,12 @@ export default function Table({ employees, loading, onCreate, onEdit, onView, on
                           background: employee.status === false ? "#dc2626" : "#16a34a"
                         }} />
                         {employee.status === false ? "Inactive" : "Active"}
-                      </span>
+                      </span> */}
+
+                      <CustomToggle
+                        checked={employee.status}
+                        onChange={(value) => updateEmployee(employee._id, value)}
+                      />
                     </td>
 
                     {/* Actions */}

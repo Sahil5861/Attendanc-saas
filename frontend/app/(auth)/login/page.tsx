@@ -11,6 +11,8 @@ import { setAuth } from "@/store/slices/authSlice";
 
 import Captcha, { CaptchaHandle } from "@/components/common/Captcha";
 import CustomInput from "@/components/common/CustomInput";
+import Link from "next/link";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -234,12 +236,25 @@ export default function LoginPage() {
                   />
                   <span style={{ fontSize: 13, color: "#64748b" }}>Remember me</span>
                 </label>
-                <button type="button" style={{
+                {/* <button
+                 type="button" style={{
                   background: "none", border: "none", cursor: "pointer",
                   color: "#059669", fontSize: 13, fontWeight: 600, padding: 0
                 }}>
                   Forgot password?
-                </button>
+                </button> */}
+
+                <Link
+                  href="/forgot-password"
+                  style={{
+                    color: "#059669",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Forgot password?
+                </Link>
               </div>
 
               {/* ── Security verification (Captcha) ── */}

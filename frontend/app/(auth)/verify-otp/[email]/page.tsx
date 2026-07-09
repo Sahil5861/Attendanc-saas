@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { verifyOtp, resendOtp } from "@/services/auth.service"; // ⚠️ adjust to your actual service functions
 import { saveAuth } from "@/lib/auth";
@@ -16,7 +16,13 @@ const RESEND_COOLDOWN = 60; // seconds
 export default function VerifyOtpPage({searchParams, } : {searchParams: { email?: string };}) {
     const router = useRouter();
     // const searchParams =();
-    const email = searchParams.email ?? "";
+    const params = useParams();
+
+
+    const email = decodeURIComponent(params.email as string);
+
+    console.log('email :', email);
+    
 
     const [values, setValues] = useState<string[]>(Array(OTP_LENGTH).fill(""));
     const [loading, setLoading] = useState(false);

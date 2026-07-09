@@ -92,6 +92,9 @@ export default function CompanyViewPage() {
             setLoading(true);
             const res = await getBranchesByCompany(companyId);
             setBranches(res.data.data || []);
+
+            console.log('res : ', res.data);
+            
         } catch {
             toast.error("Failed to load branches");
         } finally {

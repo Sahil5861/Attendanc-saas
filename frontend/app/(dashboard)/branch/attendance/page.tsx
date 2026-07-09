@@ -24,6 +24,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; b
   "L": { label: "Leave", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500", value: 'onLeave' },
   "H": { label: "Holiday", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500", value: 'holiday' },
   "-": { label: "No record", bg: "bg-slate-50", text: "text-slate-300", border: "border-slate-100", dot: "bg-slate-300", value: '-' },
+  "NA": { label: "No record", bg: "bg-slate-50", text: "text-slate-300", border: "border-slate-100", dot: "bg-slate-300", value: '-' },
 };
 
 
@@ -546,7 +547,7 @@ export default function AttendancePage() {
                           const status = attendanceRecord?.status || '-';
 
                           if (!isFutureDate && !beforeJoining) {
-                            label = status == 'present' ? 'P' : status == 'absent' ? 'A' : status == 'onLeave' ? 'L' : isWeekend ? 'H' : 'A';
+                            label = status == 'present' ? 'P' : status == 'absent' ? 'A' : status == 'onLeave' ? 'L' : isWeekend ? 'H' : '-';
                           }
                           const cfg = STATUS_CONFIG[label] ?? STATUS_CONFIG["-"];
                           const hasRecord = !isFutureDate && !beforeJoining;

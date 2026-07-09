@@ -30,13 +30,14 @@ interface Props {
   onSubmit: () => void;
 }
 
-export default function BranchModal({ open, mode, form, setForm, onClose, onSubmit }: Props) {
+export default function BranchModal({ open, mode, form, setForm, onClose, onSubmit }: Props) {  
   if (!open) return null;
-
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [citiesLoading, setCitiesLoading] = useState(false);
+
+
 
   useEffect(() => {
     const loadStates = async () => {

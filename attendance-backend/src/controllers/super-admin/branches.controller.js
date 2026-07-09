@@ -186,11 +186,11 @@ exports.updateCompanyBranches = async(req, res)=>{
     try {
         const {id}  = req.params;
         const {
-            branchOwnerName, branchName, location, city, state, mobileNumber, email, password, status, company_id
+            branchOwnerName, branchName, location, city, state, mobileNumber, email, password, status, companyId
         } = req.body;
 
         if (
-            !branchOwnerName || !branchName || !mobileNumber || !company_id
+            !branchOwnerName || !branchName || !mobileNumber || !companyId
         ) {
             return res.status(400).json({
                 success: false,
@@ -201,7 +201,7 @@ exports.updateCompanyBranches = async(req, res)=>{
        const branch = await Branch.findByIdAndUpdate(
         id, 
         {
-            companyId: company_id, 
+            companyId: companyId, 
             branchName, 
             branchOwnerName, 
             location, 
@@ -217,9 +217,6 @@ exports.updateCompanyBranches = async(req, res)=>{
         }
        );
 
-
-       console.log('Branch : ', branch);
-       
 
         if (branch) {           
             return res.status(200).json({
