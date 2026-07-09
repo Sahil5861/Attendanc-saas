@@ -117,7 +117,7 @@ export default function Table({ employees, loading, onCreate, onEdit, onView, on
       }
 
     } catch (error) {
-        toast.error(error.message);
+        toast.error('Something went wrong !');
     }
   }
 
