@@ -65,7 +65,9 @@ exports.getLeave = async (req, res) => {
 
     } catch (error) {
         console.error(error)
-        return res.status(500).json(200);
+        return res.status(500).json({
+            success: false, message: error.message
+        });
     }
 }
 
