@@ -12,73 +12,75 @@ const masters = require("../../constants/masters")
 
 
 const Role = require("../../models/Role");
+const State = require("../../models/State");
+const City = require("../../models/City");
 
 
-exports.getCompanies = async (req,res)=>{
+exports.getCompanies = async (req, res) => {
 
-    try{
+    try {
 
         const companies =
-        await Company.find()
-        .populate(
-            "adminUserId",
-            "name email phone"
-        )
-        .sort({
-            createdAt:-1
-        });
+            await Company.find()
+                .populate(
+                    "adminUserId",
+                    "name email phone"
+                )
+                .sort({
+                    createdAt: -1
+                });
 
         return res.json({
-            success:true,
-            data:companies
+            success: true,
+            data: companies
         });
 
     }
-    catch(error){
+    catch (error) {
         console.log('error : ', error);
-        
+
         return res.status(500)
-        .json({
-            success:false
-        });
+            .json({
+                success: false
+            });
     }
 };
 
-exports.getCompany = async (req,res)=>{
+exports.getCompany = async (req, res) => {
 
-    try{
+    try {
 
         const company =
-        await Company.findById(
-            req.params.id
-        )
-        .populate(
-            "adminUserId",
-            "name email phone"
-        );
+            await Company.findById(
+                req.params.id
+            )
+                .populate(
+                    "adminUserId",
+                    "name email phone"
+                );
 
-        if(!company){
+        if (!company) {
 
             return res.status(404)
-            .json({
-                success:false,
-                message:
-                "Company not found"
-            });
+                .json({
+                    success: false,
+                    message:
+                        "Company not found"
+                });
         }
 
         return res.json({
-            success:true,
-            data:company
+            success: true,
+            data: company
         });
 
     }
-    catch(error){
+    catch (error) {
 
         return res.status(500)
-        .json({
-            success:false
-        });
+            .json({
+                success: false
+            });
     }
 };
 
@@ -87,7 +89,7 @@ exports.createCompany = async (req, res) => {
     try {
 
         const {
-            companyName, companyCode,ownerName,email,phone,gstNumber,address,adminName,adminEmail,adminPhone,password, city, state
+            companyName, companyCode, ownerName, email, phone, gstNumber, address, adminName, adminEmail, adminPhone, password, city, state
         } = req.body;
 
         const companyExists =
@@ -131,7 +133,7 @@ exports.createCompany = async (req, res) => {
             await Role.findOne({
                 name: "COMPANY_ADMIN"
             });
-            
+
         const hashedPassword =
             await bcrypt.hash(
                 password,
@@ -145,7 +147,7 @@ exports.createCompany = async (req, res) => {
             password: hashedPassword,
             realPassword: password,
             role: 'COMPANY_ADMIN',
-            roleId:companyAdminRole._id
+            roleId: companyAdminRole._id
         });
 
         const gst = gstNumber;
@@ -163,7 +165,7 @@ exports.createCompany = async (req, res) => {
             createdBy: req.user.id
         });
 
-        if (company) {                    
+        if (company) {
             adminUser.companyId = company._id;
             await adminUser.save();
 
@@ -173,18 +175,18 @@ exports.createCompany = async (req, res) => {
                 companyId: company._id,
                 branchName: companyName,
                 branchOwnerName: ownerName,
-                location:address,
-                mobileNumber:phone,
+                location: address,
+                mobileNumber: phone,
                 city: city,
-                state:state,
+                state: state,
                 email: email,
-                status:true,
-                createdBy:req.user.id                
+                status: true,
+                createdBy: req.user.id
             });
 
             await Designation.insertMany(
-                masters.designations.map((item)=>({
-                    ...item, branchId: branch._id, status: true                    
+                masters.designations.map((item) => ({
+                    ...item, branchId: branch._id, status: true
                 }))
             )
 
@@ -236,7 +238,7 @@ exports.updateCompany = async (req, res) => {
         } = req.body;
 
         console.log('req : ', req.body);
-        
+
 
         const company = await Company.findById(req.params.id);
 
@@ -341,41 +343,41 @@ exports.deleteCompany = async (req, res) => {
     }
 };
 
-exports.changeStatus = async (req,res)=>{
+exports.changeStatus = async (req, res) => {
 
-    try{
+    try {
 
         const company =
-        await Company.findById(
-            req.params.id
-        );
+            await Company.findById(
+                req.params.id
+            );
 
         company.status =
-        !company.status;
+            !company.status;
 
         await company.save();
 
         return res.json({
 
-            success:true,
+            success: true,
 
             status:
-            company.status
+                company.status
         });
 
     }
-    catch(error){
+    catch (error) {
 
         return res.status(500)
-        .json({
-            success:false
-        });
+            .json({
+                success: false
+            });
     }
 };
 
-exports.getBranchesByCompany = async (req,res)=>{
+exports.getBranchesByCompany = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
 
         if (!id) {
             return res.status(400).json({
@@ -391,15 +393,36 @@ exports.getBranchesByCompany = async (req,res)=>{
             createdAt: -1
         });
 
+        const allBranches = await Promise.all(
+            branches.map(async (branch) => {
+
+                const state = await State.findOne({
+                    stateId: Number(branch.state)
+                });
+
+                const city = await City.findOne({
+                    cityId: Number(branch.city)
+                });
+
+                return {
+                    ...branch.toObject(),
+                    state,
+                    city
+                };
+            })
+        );
+
+        
+
 
         if (branches.length > 0) {
             return res.status(200).json({
                 success: true,
-                data: branches
-            })
+                data: allBranches
+            });
         }
 
-        else{
+        else {
             return res.status(400).json({
                 success: false,
                 mesage: "Branches not found"
@@ -418,31 +441,31 @@ exports.getBranchesByCompany = async (req,res)=>{
 
 
 
-exports.getCompanyBranches = async(req, res)=>{
-    try {        
+exports.getCompanyBranches = async (req, res) => {
+    try {
 
-        
+
         const companyId = req.user.companyId;
 
 
         const branches = await Branch.find({
             companyId: companyId
-        }).sort({createdAt: -1});
+        }).sort({ createdAt: -1 });
 
         const branchesWithPlans = await Promise.all(
             branches.map(async (branch) => {
                 const realation = await BranchPlanRelation.findOne({
-                    branch_id : branch._id,
+                    branch_id: branch._id,
                     status: 'active'
                 }).populate({
-                    path : 'plan_id',
+                    path: 'plan_id',
                     populate: {
                         path: 'features.feature_id',
-                        model : 'Feature'
+                        model: 'Feature'
                     },
                 });
                 const user = await User.findOne({
-                    branchId : branch._id
+                    branchId: branch._id
                 });
 
 
@@ -453,9 +476,9 @@ exports.getCompanyBranches = async(req, res)=>{
 
 
                 const permissions = await Permission.find({
-                    _id: {$in : role.permissions}
+                    _id: { $in: role.permissions }
                 }).select('name');
-                
+
                 const permission_names = permissions.map((permission) => {
                     return permission.name;
                 });
@@ -463,39 +486,39 @@ exports.getCompanyBranches = async(req, res)=>{
                 return {
                     ...branch.toObject(),
                     plan: realation,
-                    permissions : permission_names
+                    permissions: permission_names
                 }
             })
         );
 
         return res.status(200).json({
-            success:true,
-            data:branchesWithPlans
+            success: true,
+            data: branchesWithPlans
         });
     } catch (error) {
         console.error(error);
         return res.status(500).json({
-            success:false,
-            message:"Server Error"
+            success: false,
+            message: "Server Error"
         });
     }
 }
 
-exports.getBranchById = async(req, res) => {
-    const {id} = req.params;
+exports.getBranchById = async (req, res) => {
+    const { id } = req.params;
 
 
     const branch = await Branch.findById(id);
 
     if (branch) {
         return res.status(200).json({
-            success:true,
-            data:branch
+            success: true,
+            data: branch
         });
     }
-    else{
+    else {
         return res.status(400).json({
-            success:false,
+            success: false,
             message: 'Branch Not found'
         });
     }
@@ -503,7 +526,7 @@ exports.getBranchById = async(req, res) => {
 }
 
 
-exports.createCompanyBranches = async(req, res)=>{
+exports.createCompanyBranches = async (req, res) => {
     // console.log('req : ', req);
 
 
@@ -519,14 +542,14 @@ exports.createCompanyBranches = async(req, res)=>{
             password,
             status, companyId
         } = req.body;
-        const user_exist = await User.findOne({email})
+        const user_exist = await User.findOne({ email })
 
 
         if (
             !branchOwnerName ||
             !branchName ||
             !email ||
-            !mobileNumber || 
+            !mobileNumber ||
             !companyId
         ) {
             return res.status(400).json({
@@ -544,7 +567,7 @@ exports.createCompanyBranches = async(req, res)=>{
         }
 
         const branch_exist = await Branch.findOne({
-            branchName, 
+            branchName,
             companyId
         });
 
@@ -568,9 +591,9 @@ exports.createCompanyBranches = async(req, res)=>{
             status,
         });
 
-        const branchRole =await Role.findOne({
-                name: "BRANCH_MANAGER"
-            });
+        const branchRole = await Role.findOne({
+            name: "BRANCH_MANAGER"
+        });
 
         const hashedPassword =
             await bcrypt.hash(
@@ -581,8 +604,8 @@ exports.createCompanyBranches = async(req, res)=>{
         if (branch) {
 
             await Designation.insertMany(
-                masters.designations.map((item)=>({
-                    ...item, branchId: branch._id, status: true                    
+                masters.designations.map((item) => ({
+                    ...item, branchId: branch._id, status: true
                 }))
             )
 
@@ -594,7 +617,7 @@ exports.createCompanyBranches = async(req, res)=>{
                 password: hashedPassword,
                 realPassword: password,
                 role: "BRANCH_MANAGER",
-                roleId:branchRole._id,
+                roleId: branchRole._id,
             });
 
 
@@ -602,29 +625,29 @@ exports.createCompanyBranches = async(req, res)=>{
                 success: true,
                 message: "Branch Created successfully !",
             });
-        }        
+        }
 
 
-        
+
     } catch (error) {
         console.error(error);
-        
+
         return res.status(500).json({
             success: false,
             message: 'Server Error',
         });
     }
-    
 
 
-    
+
+
 }
 
 
-exports.updateCompanyBranches = async(req, res)=>{
+exports.updateCompanyBranches = async (req, res) => {
 
     try {
-        const {id}  = req.params;
+        const { id } = req.params;
         const {
             branchOwnerName, branchName, location, city, state, mobileNumber, email, password, status, companyId
         } = req.body;
@@ -638,40 +661,40 @@ exports.updateCompanyBranches = async(req, res)=>{
             });
         }
 
-       const branch = await Branch.findByIdAndUpdate(
-        id, 
-        {
-            companyId, 
-            branchName, 
-            branchOwnerName, 
-            location, 
-            city, 
-            state, 
-            mobileNumber, 
-            email,
-            status,
-        },
-        {
-            new : true,
-            runValidators: true,
-        }
-       );
+        const branch = await Branch.findByIdAndUpdate(
+            id,
+            {
+                companyId,
+                branchName,
+                branchOwnerName,
+                location,
+                city,
+                state,
+                mobileNumber,
+                email,
+                status,
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        );
 
 
-        if (branch) {           
+        if (branch) {
             return res.status(200).json({
                 success: true,
                 message: "Branch Updated successfully !",
             });
         };
-        
+
         return res.status(400).json({
             success: false,
             message: "Branch Not found",
-        });    
+        });
     } catch (error) {
         console.error(error);
-        
+
         return res.status(500).json({
             success: false,
             message: 'Server Error',
@@ -680,12 +703,12 @@ exports.updateCompanyBranches = async(req, res)=>{
 }
 
 
-exports.deleteCompanyBranches = async (req, res)=>{
+exports.deleteCompanyBranches = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
 
         const branch = await Branch.findByIdAndDelete(
-            id            
+            id
         );
 
         if (branch) {

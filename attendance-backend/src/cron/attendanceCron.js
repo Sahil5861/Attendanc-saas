@@ -5,7 +5,7 @@ const BranchSettings = require("../models/BranchSettings");
 
 
 cron.schedule(
-    "60 * * *", // Every day at 6 PM
+    "*/30 * * * *", // Every day at 6 PM
     async () => {
         console.log("Running Auto Absent Cron");
 
@@ -38,7 +38,7 @@ cron.schedule(
             for (const branch of branches) {
 
                 // agar endTime ke according chalana hai
-                // if (currentTime < branch.endTime) continue;
+                if (currentTime < branch.endTime) continue;
 
                 const employees = await Employee.find({
                     status: true,

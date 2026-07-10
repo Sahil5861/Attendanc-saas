@@ -80,7 +80,7 @@ export default function BranchPlansPage() {
 
             setPlans((plansRes.data.data || []).filter((p: Plan) => p.status !== false));
             setCurrentPlan(activeRes.data.data || null);
-            setBillingCycle(activeRes.data.data.billingCycle)
+            setBillingCycle(activeRes.data.data?.billingCycle || 'monthly')
         } catch {
             toast.error("Failed to load plans");
         } finally {

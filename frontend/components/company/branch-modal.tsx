@@ -35,7 +35,6 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
   const [citiesLoading, setCitiesLoading] = useState(false);
 
 
-  if (!open) return null;
 
 
   const updateCities = async (stateId: string) => {
@@ -68,11 +67,11 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
   };
 
 
-  const handleChange = (feild:string, value: string) => {
-      setForm((prev:any) => ({
-        ...prev, 
-        [feild]: value
-      }))
+  const handleChange = (feild: string, value: string) => {
+    setForm((prev: any) => ({
+      ...prev,
+      [feild]: value
+    }))
   }
 
 
@@ -108,6 +107,8 @@ export default function BranchModal({ open, mode, form, setForm, onClose, onSubm
       updateCities(form.state);
     }
   }, [open, form.state]);
+
+  if (!open) return null;
 
 
   return (

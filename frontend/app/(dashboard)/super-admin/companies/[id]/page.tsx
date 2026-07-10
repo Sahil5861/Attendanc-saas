@@ -4,6 +4,19 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
+    ArrowLeft,
+    Building2,
+    Mail,
+    Phone,
+    MapPin,
+    Plus,
+    Edit2,
+    Trash2,
+    Store,
+    CheckCircle2,
+    XCircle,
+} from "lucide-react";
+import {
     getCompanyById,
     getBranchesByCompany,
     createBranch,
@@ -28,13 +41,26 @@ interface Company {
     createdAt?: string;
 }
 
+interface State {
+    _id: string;
+    name: string;
+    stateId: string;
+}
+
+interface City {
+    _id: string;
+    stateId: string;
+    cityId: string;
+    name: string;
+}
+
 interface Branch {
     _id: string;
     branchOwnerName: string;
     branchName: string;
     location: string;
-    city: string;
-    state: string;
+    city: City;
+    state: State;
     mobileNumber: string;
     email: string;
     password: string;
@@ -73,11 +99,6 @@ export default function CompanyViewPage() {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchCompany();
-        fetchBranches();
-    }, [companyId]);
-
     const fetchCompany = async () => {
         try {
             const res = await getCompanyById(companyId);
@@ -92,15 +113,22 @@ export default function CompanyViewPage() {
             setLoading(true);
             const res = await getBranchesByCompany(companyId);
             setBranches(res.data.data || []);
-
-            console.log('res : ', res.data);
-            
         } catch {
             toast.error("Failed to load branches");
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchCompany();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        fetchBranches();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [companyId]);
 
     // ── Create ──
     const handleCreate = () => {
@@ -117,11 +145,11 @@ export default function CompanyViewPage() {
             branchOwnerName: branch.branchOwnerName || "",
             branchName: branch.branchName || "",
             location: branch.location || "",
-            city: branch.city || "",
-            state: branch.state || "",
+            city: branch.city?.cityId || "",
+            state: branch.state?.stateId || "",
             mobileNumber: branch.mobileNumber || "",
             email: branch.email || "",
-            password: branch.password || "",
+            password: "", // Fixed: never prefill an existing (hashed) password into an edit form
             status: branch.status ?? true,
         });
         setMode("edit");
@@ -171,172 +199,156 @@ export default function CompanyViewPage() {
         }
     };
 
+    // Fixed: city/state are objects ({_id, name, ...}), not strings — joining them
+    // directly produced "[object Object]" in the search string, so searching by
+    // city/state name silently never matched anything.
     const filteredBranches = branches.filter((b) =>
-        [b.branchName, b.branchOwnerName, b.city, b.state]
+        [b.branchName, b.branchOwnerName, b.city?.name, b.state?.name]
             .join(" ")
             .toLowerCase()
             .includes(search.toLowerCase())
     );
 
-    const isActive = company?.status == true;
+    const activeBranchCount = branches.filter((b) => b.status !== false).length;
+    const inactiveBranchCount = branches.length - activeBranchCount;
+
+    const isActive = company?.status === true;
 
     return (
-        <div style={{ padding: "0 0 40px" }}>
-
-            {/* ── Back button ── */}
-
-
+        <div className="pb-10">
+            {/* Back button */}
             <Button
                 title="Back"
                 type="success"
                 outline
                 onClick={() => router.back()}
-                icon={
-                    <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                    >
-                        <path d="M19 12H5M12 5l-7 7 7 7" />
-                    </svg>
-                }
+                icon={<ArrowLeft size={16} />}
             />
 
-            {/* ── Company details card ── */}
+            {/* Company details card */}
             {company && (
-                <div style={{
-                    background: "#fff",
-                    border: "1.5px solid #d1fae5",
-                    borderRadius: 16,
-                    padding: "28px 32px",
-                    marginTop:28,
-                    marginBottom: 28,
-                    boxShadow: "0 4px 24px rgba(16,185,129,.06)",
-                    display: "flex", justifyContent: "space-between",
-                    flexWrap: "wrap", gap: 24,
-                }}>
-
-                    {/* Left: identity */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                        <div style={{
-                            width: 60, height: 60, borderRadius: 16, flexShrink: 0,
-                            background: "linear-gradient(135deg, #d1fae5, #cffafe)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 24, fontWeight: 800, color: "#065f46",
-                        }}>
+                <div className="mt-7 mb-7 flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-emerald-100 bg-white p-7 shadow-[0_4px_24px_rgba(16,185,129,0.06)]">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-cyan-100 text-2xl font-extrabold text-emerald-800">
                             {company.companyName?.charAt(0).toUpperCase()}
                         </div>
 
                         <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                                <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", margin: 0 }}>
-                                    {company.companyName}
-                                </h1>
-                                <span style={{
-                                    display: "inline-flex", alignItems: "center", gap: 5,
-                                    background: isActive ? "#dcfce7" : "#fef2f2",
-                                    color: isActive ? "#15803d" : "#dc2626",
-                                    fontSize: 11, fontWeight: 700,
-                                    padding: "3px 10px", borderRadius: 99,
-                                    border: `1px solid ${isActive ? "#86efac" : "#fca5a5"}`,
-                                    letterSpacing: "0.05em", textTransform: "uppercase",
-                                }}>
-                                    <span style={{
-                                        width: 6, height: 6, borderRadius: "50%",
-                                        background: isActive ? "#16a34a" : "#dc2626",
-                                    }} />
-                                    {company.status == true ? 'Active' : 'Deactive'}
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                <h1 className="text-xl font-extrabold text-slate-900">{company.companyName}</h1>
+                                <span
+                                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                                        isActive
+                                            ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+                                            : "border-red-300 bg-red-50 text-red-600"
+                                    }`}
+                                >
+                                    <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-600" : "bg-red-600"}`} />
+                                    {isActive ? "Active" : "Deactive"}
                                 </span>
                             </div>
-                            <p style={{ fontSize: 12, color: "#94a3b8", margin: "4px 0 0", letterSpacing: "0.05em" }}>
-                                {company.companyCode}
-                            </p>
+                            <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">{company.companyCode}</p>
                         </div>
                     </div>
 
-                    {/* Right: contact info grid */}
-                    <div style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-                        gap: "16px 32px",
-                    }}>
-                        <InfoItem icon="ti-user" label="Owner" value={company.ownerName} />
-                        <InfoItem icon="ti-mail" label="Email" value={company.email} link={`mailto:${company.email}`} />
-                        <InfoItem icon="ti-phone" label="Phone" value={company.phone} mono />
-                        {company.address && <InfoItem icon="ti-map-pin" label="Address" value={company.address} />}
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                        <InfoItem icon={<Building2 size={13} />} label="Owner" value={company.ownerName} />
+                        <InfoItem icon={<Mail size={13} />} label="Email" value={company.email} link={`mailto:${company.email}`} />
+                        <InfoItem icon={<Phone size={13} />} label="Phone" value={company.phone} mono />
+                        {company.address && <InfoItem icon={<MapPin size={13} />} label="Address" value={company.address} />}
                     </div>
                 </div>
             )}
 
-            {/* ── Branches header ── */}
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+            {/* Branch stats */}
+            <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-600">
+                            <Store size={18} />
+                        </span>
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Branches</p>
+                            <p className="text-xl font-extrabold text-slate-900">{branches.length}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600">
+                            <CheckCircle2 size={18} />
+                        </span>
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Active</p>
+                            <p className="text-xl font-extrabold text-slate-900">{activeBranchCount}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-600">
+                            <XCircle size={18} />
+                        </span>
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Inactive</p>
+                            <p className="text-xl font-extrabold text-slate-900">{inactiveBranchCount}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Branches header */}
+            <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", margin: 0 }}>
-                        Branches
-                    </h2>
-                    <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 4 }}>
+                    <h2 className="text-lg font-extrabold text-slate-900">Branches</h2>
+                    <p className="mt-1 text-sm text-slate-400">
                         {branches.length} {branches.length === 1 ? "branch" : "branches"} registered
                     </p>
                 </div>
 
-                <div style={{ display: "flex", gap: 10 }}>                   
-                    <SearchInput
-                        value={search}
-                        onChange={(value) => setSearch(value)}
-                        placeholder="Search branches..."
-                    />
-
-                    <PrimaryButton
-                        title="Add Branch"
-                        onClick={handleCreate}
-                        icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>}
-                    />
+                <div className="flex gap-2.5">
+                    <SearchInput value={search} onChange={(value) => setSearch(value)} placeholder="Search branches..." />
+                    <PrimaryButton title="Add Branch" onClick={handleCreate} icon={<Plus size={15} />} />
                 </div>
             </div>
 
-            {/* ── Branches table ── */}
-            <div style={{
-                background: "#fff",
-                border: "1.5px solid #d1fae5",
-                borderRadius: 16,
-                overflow: "hidden",
-                boxShadow: "0 4px 24px rgba(16,185,129,.06)",
-            }}>
-                <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+            {/* Branches table */}
+            <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
                         <thead>
                             <tr>
-                                <th style={thStyle}>Branch</th>
-                                <th style={thStyle}>Owner</th>
-                                <th style={thStyle}>Location</th>
-                                <th style={thStyle}>City / State</th>
-                                <th style={thStyle}>Mobile</th>
-                                <th style={thStyle}>Status</th>
-                                <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
+                                <th className="border-b border-emerald-100 bg-slate-50 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Branch</th>
+                                <th className="border-b border-emerald-100 bg-slate-50 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Owner</th>
+                                <th className="border-b border-emerald-100 bg-slate-50 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Location</th>
+                                <th className="border-b border-emerald-100 bg-slate-50 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">City / State</th>
+                                <th className="border-b border-emerald-100 bg-slate-50 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Mobile</th>
+                                <th className="border-b border-emerald-100 bg-slate-50 px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Status</th>
+                                <th className="border-b border-emerald-100 bg-slate-50 px-4 py-3.5 text-right text-[11px] font-bold uppercase tracking-wide text-slate-500">Actions</th>
                             </tr>
                         </thead>
 
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={7} style={{ padding: "60px 24px", textAlign: "center", color: "#94a3b8" }}>
-                                        Loading branches…
+                                    <td colSpan={7} className="p-8">
+                                        <div className="space-y-3">
+                                            {Array.from({ length: 4 }).map((_, i) => (
+                                                <div key={i} className="h-12 animate-pulse rounded-xl bg-slate-100" />
+                                            ))}
+                                        </div>
                                     </td>
                                 </tr>
                             ) : filteredBranches.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} style={{ padding: "60px 24px", textAlign: "center", color: "#94a3b8" }}>
-                                        <div style={{ fontSize: 32, marginBottom: 10 }}>🏬</div>
-                                        <p style={{ fontWeight: 600, color: "#64748b", margin: "0 0 4px" }}>
+                                    <td colSpan={7} className="px-6 py-16 text-center text-slate-400">
+                                        <div className="mb-2 text-3xl">🏬</div>
+                                        <p className="mb-1 font-semibold text-slate-600">
                                             {branches.length === 0 ? "No branches yet" : "No branches found"}
                                         </p>
-                                        <p style={{ fontSize: 13, margin: 0 }}>
+                                        <p className="text-sm">
                                             {branches.length === 0 ? "Add your first branch to get started" : "Try adjusting your search"}
                                         </p>
                                     </td>
@@ -352,111 +364,62 @@ export default function CompanyViewPage() {
                                             key={branch._id}
                                             onMouseEnter={() => setHoveredRow(branch._id)}
                                             onMouseLeave={() => setHoveredRow(null)}
-                                            style={{
-                                                borderBottom: isLast ? "none" : "1px solid #f0fdf4",
-                                                background: isHovered ? "#f0fdf8" : "#fff",
-                                                transition: "background .15s",
-                                            }}
+                                            className={`transition-colors ${isLast ? "" : "border-b border-emerald-50"} ${isHovered ? "bg-emerald-50/40" : "bg-white"}`}
                                         >
                                             {/* Branch name */}
-                                            <td style={{ padding: "16px 18px" }}>
-                                                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                                    <div style={{
-                                                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                                                        background: "linear-gradient(135deg, #d1fae5, #cffafe)",
-                                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                                        fontSize: 14, fontWeight: 800, color: "#0e7490",
-                                                    }}>
+                                            <td className="px-4 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-100 to-cyan-100 text-sm font-extrabold text-cyan-700">
                                                         {branch.branchName?.charAt(0).toUpperCase()}
                                                     </div>
-                                                    <p style={{ fontWeight: 700, color: "#0f172a", margin: 0, fontSize: 14 }}>
-                                                        {branch.branchName}
-                                                    </p>
+                                                    <p className="font-bold text-slate-900">{branch.branchName}</p>
                                                 </div>
                                             </td>
 
                                             {/* Owner */}
-                                            <td style={{ padding: "16px 18px", color: "#334155", fontWeight: 500 }}>
-                                                {branch.branchOwnerName}
-                                            </td>
+                                            <td className="px-4 py-4 font-medium text-slate-700">{branch.branchOwnerName}</td>
 
                                             {/* Location */}
-                                            <td style={{ padding: "16px 18px", color: "#64748b" }}>
-                                                {branch.location}
-                                            </td>
+                                            <td className="px-4 py-4 text-slate-500">{branch.location || "—"}</td>
 
                                             {/* City / State */}
-                                            <td style={{ padding: "16px 18px" }}>
-                                                <p style={{ margin: 0, fontWeight: 600, color: "#334155", fontSize: 13 }}>{branch.city}</p>
-                                                <p style={{ margin: "1px 0 0", fontSize: 12, color: "#94a3b8" }}>{branch.state}</p>
+                                            <td className="px-4 py-4">
+                                                <p className="font-semibold text-slate-700">{branch.city?.name || "—"}</p>
+                                                <p className="mt-0.5 text-xs text-slate-400">{branch.state?.name || "—"}</p>
                                             </td>
 
                                             {/* Mobile */}
-                                            <td style={{ padding: "16px 18px", color: "#64748b", fontFamily: "monospace", fontSize: 13 }}>
-                                                {branch.mobileNumber}
-                                            </td>
+                                            <td className="px-4 py-4 font-mono text-xs text-slate-500">{branch.mobileNumber}</td>
 
                                             {/* Status */}
-                                            <td style={{ padding: "16px 18px" }}>
-                                                <span style={{
-                                                    display: "inline-flex", alignItems: "center", gap: 5,
-                                                    background: branchActive ? "#dcfce7" : "#fef2f2",
-                                                    color: branchActive ? "#15803d" : "#dc2626",
-                                                    fontSize: 11, fontWeight: 700,
-                                                    padding: "4px 10px", borderRadius: 99,
-                                                    border: `1px solid ${branchActive ? "#86efac" : "#fca5a5"}`,
-                                                }}>
-                                                    <span style={{
-                                                        width: 6, height: 6, borderRadius: "50%",
-                                                        background: branchActive ? "#16a34a" : "#dc2626",
-                                                    }} />
+                                            <td className="px-4 py-4">
+                                                <span
+                                                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${
+                                                        branchActive
+                                                            ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+                                                            : "border-red-300 bg-red-50 text-red-600"
+                                                    }`}
+                                                >
+                                                    <span className={`h-1.5 w-1.5 rounded-full ${branchActive ? "bg-emerald-600" : "bg-red-600"}`} />
                                                     {branchActive ? "Active" : "Inactive"}
                                                 </span>
                                             </td>
 
                                             {/* Actions */}
-                                            <td style={{ padding: "16px 18px", textAlign: "right" }}>
-                                                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                                            <td className="px-4 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
                                                     <button
                                                         onClick={() => handleEdit(branch)}
-                                                        style={{
-                                                            background: isHovered ? "#f0fdf4" : "transparent",
-                                                            border: "1.5px solid #d1fae5",
-                                                            borderRadius: 8, padding: "6px 14px",
-                                                            fontSize: 12, fontWeight: 600, color: "#059669",
-                                                            cursor: "pointer", transition: "all .15s",
-                                                            display: "flex", alignItems: "center", gap: 5,
-                                                        }}
-                                                        onMouseEnter={(e) => { e.currentTarget.style.background = "#dcfce7"; e.currentTarget.style.borderColor = "#86efac"; }}
-                                                        onMouseLeave={(e) => { e.currentTarget.style.background = isHovered ? "#f0fdf4" : "transparent"; e.currentTarget.style.borderColor = "#d1fae5"; }}
+                                                        className="flex items-center gap-1.5 rounded-lg border border-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50"
                                                     >
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                                                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                                                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z" />
-                                                        </svg>
-                                                        Edit
+                                                        <Edit2 size={13} /> Edit
                                                     </button>
 
                                                     <button
                                                         onClick={() => handleDelete(branch)}
-                                                        style={{
-                                                            background: "transparent",
-                                                            border: "1.5px solid #fee2e2",
-                                                            borderRadius: 8, padding: "6px 14px",
-                                                            fontSize: 12, fontWeight: 600, color: "#dc2626",
-                                                            cursor: "pointer", transition: "all .15s",
-                                                            display: "flex", alignItems: "center", gap: 5,
-                                                        }}
-                                                        onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = "#fca5a5"; }}
-                                                        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#fee2e2"; }}
+                                                        className="flex items-center gap-1.5 rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50"
                                                     >
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                                                            <polyline points="3 6 5 6 21 6" />
-                                                            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                                                            <path d="M10 11v6M14 11v6" />
-                                                            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-                                                        </svg>
-                                                        Delete
+                                                        <Trash2 size={13} /> Delete
                                                     </button>
                                                 </div>
                                             </td>
@@ -469,7 +432,7 @@ export default function CompanyViewPage() {
                 </div>
             </div>
 
-            {/* ── Modal & Confirm Dialog ── */}
+            {/* Modal & Confirm Dialog */}
             <BranchModal
                 open={open}
                 mode={mode}
@@ -493,32 +456,32 @@ export default function CompanyViewPage() {
 }
 
 // ── Helper components ──
-function InfoItem({ icon, label, value, link, mono }: { icon: string; label: string; value?: string; link?: string; mono?: boolean }) {
+function InfoItem({
+    icon,
+    label,
+    value,
+    link,
+    mono,
+}: {
+    icon: React.ReactNode;
+    label: string;
+    value?: string;
+    link?: string;
+    mono?: boolean;
+}) {
     const content = (
-        <p style={{ margin: 0, fontWeight: 600, color: link ? "#0891b2" : "#0f172a", fontSize: 14, fontFamily: mono ? "monospace" : undefined }}>
+        <p className={`m-0 text-sm font-semibold ${link ? "text-cyan-600" : "text-slate-900"} ${mono ? "font-mono" : ""}`}>
             {value || "—"}
         </p>
     );
+
     return (
         <div>
-            <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 3px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
-                <i className={`ti ${icon}`} aria-hidden style={{ fontSize: 13 }} />
+            <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                {icon}
                 {label}
             </p>
-            {link ? <a href={link} style={{ textDecoration: "none" }}>{content}</a> : content}
+            {link ? <a href={link} className="no-underline">{content}</a> : content}
         </div>
     );
 }
-
-const thStyle: React.CSSProperties = {
-    padding: "14px 18px",
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#64748b",
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    whiteSpace: "nowrap",
-    background: "#f8fffe",
-    borderBottom: "1.5px solid #d1fae5",
-    textAlign: "left",
-};
