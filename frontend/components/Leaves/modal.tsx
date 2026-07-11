@@ -1,3 +1,4 @@
+import CustomDatePicker from "../common/CustomDatePicker";
 import CustomInput from "../common/CustomInput";
 import CustomSelect from "../common/CustomSelect";
 import ModalFooter from "../common/ModalFooter";
@@ -135,7 +136,7 @@ export default function LeaveModal({
                     {form.daysType == 'single' && (
 
                         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 16 }}>
-                            <CustomInput
+                            {/* <CustomInput
                                 label="Date"
                                 type="date"
                                 value={toDateInputValue(form.date)}
@@ -147,6 +148,21 @@ export default function LeaveModal({
                                             : null,
                                     }))
                                 }
+                            /> */}
+
+                            <CustomDatePicker
+                            
+                                label="Date"
+                                value={toDateInputValue(form.date)}
+                                onChange={(e) =>
+                                    setForm((prev: Form) => ({
+                                        ...prev,
+                                        date: e.target.value
+                                            ? new Date(e.target.value)
+                                            : null,
+                                    }))
+                                }
+                                placeholder="Select Date"
                             />
                         </div>
                     )}

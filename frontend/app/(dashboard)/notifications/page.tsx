@@ -10,12 +10,17 @@ import {
   CheckCircle2,
   ExternalLink,
   Inbox,
+  RotateCcw,
+  TicketCheck,
+  Trash2,
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { getNotifications, markNotificationAsRead } from "@/services/notification.service";
+import { getNotifications, markAllNotificationRead, markNotificationAsRead } from "@/services/notification.service";
 import Button from "@/components/common/Button";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { decrementUnreadCount, resetUnreadCount } from "@/store/slices/notificationSlice";
 
 interface Notification {
   _id: string;
@@ -94,10 +99,44 @@ export default function NotificationsPage() {
     }
   };
 
+  const markAllRead = async () => {
+    try {
+      setMarkingReadId("all");
+
+      await markAllNotificationRead();
+
+      // Update all notifications locally
+      setNotifications((prev) =>
+        prev.map((item) => ({
+          ...item,
+          isRead: true,
+        }))
+      );
+
+      // Reset unread count in Redux
+      dispatch(resetUnreadCount());
+
+      toast.success("All notifications marked as read");
+    } catch (error: unknown) {
+      const message =
+        error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+            ?.data?.message
+          : undefined;
+
+      toast.error(message || "Failed to mark all notifications as read");
+    } finally {
+      setMarkingReadId(null);
+    }
+  };
+
+  const dispatch = useDispatch();
+
   // Open popup + mark as read immediately (this is what the backend call fires on)
   const handleOpen = async (notification: Notification) => {
     setSelectedNotification(notification);
     await markRead(notification);
+    dispatch(decrementUnreadCount());
   };
 
   const handleClose = () => {
@@ -119,13 +158,13 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6 pb-10">
 
-      <div style={{textAlign:'left', marginBottom: 20}}>
+      <div style={{ textAlign: 'left', marginBottom: 20 }}>
         <Button
           title="Back"
-          icon={<ArrowLeft size={13}/>}
+          icon={<ArrowLeft size={13} />}
           type="success"
           outline
-          onClick={()=> router.back()}
+          onClick={() => router.back()}
         />
       </div>
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -138,12 +177,24 @@ export default function NotificationsPage() {
           </p>
         </div>
 
-        <button
-          onClick={fetchNotifications}
-          className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-        >
-          Refresh
-        </button>
+        <div style={{width: 400, textAlign:'right', flex: 1, justifyContent: 'center', alignItems:'center', gap: 20}}>
+          <button
+            onClick={fetchNotifications}
+            title="Refresh"
+            className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition mx-2"
+          >
+            <RotateCcw size={16}/>
+          </button>
+
+          <button
+            onClick={markAllRead}
+            title="Mark All read"
+            className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+          >
+            <CheckCheck size={16}/>
+          </button>
+        </div>
+        
       </div>
 
       {/* ---- Stats cards ---- */}
@@ -218,16 +269,14 @@ export default function NotificationsPage() {
                 <button
                   key={notification._id}
                   onClick={() => handleOpen(notification)}
-                  className={`w-full text-left p-5 transition flex items-start gap-4 ${
-                    isUnread ? "bg-emerald-50/30 hover:bg-emerald-50/60" : "hover:bg-slate-50"
-                  }`}
+                  className={`w-full text-left p-5 transition flex items-start gap-4 ${isUnread ? "bg-emerald-50/30 hover:bg-emerald-50/60" : "hover:bg-slate-50"
+                    }`}
                 >
                   <span
-                    className={`mt-1 h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                      isUnread
+                    className={`mt-1 h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border ${isUnread
                         ? "bg-emerald-50 border-emerald-100 text-emerald-600"
                         : "bg-slate-50 border-slate-100 text-slate-400"
-                    }`}
+                      }`}
                   >
                     <Bell size={18} />
                   </span>
@@ -236,9 +285,8 @@ export default function NotificationsPage() {
                     <span className="flex items-start justify-between gap-3">
                       <span className="flex items-center gap-2">
                         <span
-                          className={`text-sm ${
-                            isUnread ? "font-bold text-slate-900" : "font-semibold text-slate-500"
-                          }`}
+                          className={`text-sm ${isUnread ? "font-bold text-slate-900" : "font-semibold text-slate-500"
+                            }`}
                         >
                           {notification.title || "New notification"}
                         </span>
@@ -246,20 +294,22 @@ export default function NotificationsPage() {
                           <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                         )}
                       </span>
-                      <span className="text-xs text-slate-400 whitespace-nowrap">
-                        {formatDate(notification.createdAt)}
+
+                      <span>
+                        <span className="text-xs text-slate-400 whitespace-nowrap">
+                          {formatDate(notification.createdAt)}
+                        </span>
                       </span>
                     </span>
 
                     <span
-                      className={`block text-sm mt-1 line-clamp-2 ${
-                        isUnread ? "text-slate-600" : "text-slate-400"
-                      }`}
+                      className={`block text-sm mt-1 line-clamp-2 ${isUnread ? "text-slate-600" : "text-slate-400"
+                        }`}
                     >
                       {notification.message}
                     </span>
 
-                    <span
+                    {/* <span
                       className={`inline-flex mt-3 text-[11px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 border ${
                         isUnread
                           ? "text-emerald-700 bg-emerald-50 border-emerald-100"
@@ -267,7 +317,7 @@ export default function NotificationsPage() {
                       }`}
                     >
                       {notification.type?.replaceAll("_", " ") || "GENERAL"}
-                    </span>
+                    </span> */}
                   </span>
                 </button>
               );

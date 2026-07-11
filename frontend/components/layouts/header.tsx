@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, UserCircle2 } from "lucide-react";
+import { Bell, PanelLeft, Search, UserCircle2 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,8 @@ import { setActiveBranch, clearActiveBranch } from "@/store/slices/branchSlice";
 import LoginAs from "../common/LoginAs";
 import { getSocket, disconnectSocket } from "@/lib/socket";
 import toast from "react-hot-toast";
+import { incrementUnreadCount, setUnreadCount } from "@/store/slices/notificationSlice";
+import { toggleSidebar } from "@/store/slices/layoutSlice";
 
 interface Branch {
   _id: string;
@@ -25,7 +27,11 @@ export default function Header() {
 
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  // const [unreadCount, setUnreadCount] = useState(0);
+
+  const unreadCount = useSelector((state: RootState) => state.notification.unreadCount)
+  const collapsed = useSelector((state: RootState) => state.layout.sidebarCollapsed);
+
 
   const dispatch = useDispatch();
   const activeBranch = useSelector((state: RootState) => state.branch.activeBranch);
@@ -46,7 +52,10 @@ export default function Header() {
   const fetchUnreadCount = async () => {
     try {
       const res = await getUnreadNotificationCount();
-      setUnreadCount(res?.data?.count || 0);
+      // setUnreadCount(res?.data?.count || 0);
+      dispatch(
+        setUnreadCount(res?.data?.count || 0)
+      );
 
       console.log('unread count : ', res);
 
@@ -117,9 +126,9 @@ export default function Header() {
     })
 
     socket.on("notification:new", (notification) => {
+      // setUnreadCount((prev) => prev + 1);
+      dispatch(incrementUnreadCount());
 
-      console.log("Notificatin received !!"); 
-      setUnreadCount((prev) => prev + 1);
       toast.success(notification.title || "New notification");
     });
 
@@ -166,8 +175,20 @@ export default function Header() {
           onExit={handleExitBranch}
         />
       )}
-      <header className="h-16 bg-white backdrop-blur border-b border-slate-200 flex items-center justify-between px-6">
-        {/* Search */}
+      {/* <header className="h-16 bg-white backdrop-blur border-b border-slate-200 flex items-center justify-between px-6">
+        <button
+          onClick={() => dispatch(toggleSidebar())}
+          className="p-2 rounded-lg hover:bg-slate-100"
+        >
+          <PanelLeft />
+        </button>
+
+        {collapsed && (
+          <div className="">
+            <h1 className="text-3xl font-bold text-black">Attendance</h1>
+            <p className="text-emerald-400">SaaS</p>
+          </div>
+        )}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -177,7 +198,6 @@ export default function Header() {
           />
         </div>
 
-        {/* Right */}
         <div className="flex items-center gap-5">
           {user?.role === "COMPANY_ADMIN" && activeBranch && branches.length > 0 && (
             <div className="flex items-center gap-2">
@@ -197,7 +217,6 @@ export default function Header() {
             </div>
           )}
 
-          {/* Bell with unread badge */}
           <button
             onClick={() => router.push("/notifications")}
             className="relative p-2 rounded-lg hover:bg-slate-100 transition"
@@ -218,6 +237,100 @@ export default function Header() {
             </div>
           </div>
         </div>
+      </header> */}
+
+
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6">
+
+        {/* Left */}
+        <div className="flex items-center gap-4 min-w-[260px]">
+
+          <button
+            onClick={() => dispatch(toggleSidebar())}
+            className="p-2 rounded-lg hover:bg-slate-100 transition"
+          >
+            <PanelLeft size={20} />
+          </button>
+
+          {collapsed && (
+            <div className="leading-none">
+              <h1 className="text-2xl font-bold text-slate-900">
+                Attendance
+              </h1>
+              <p className="text-sm font-semibold text-emerald-500">
+                SaaS
+              </p>
+            </div>
+          )}
+
+        </div>
+
+        {/* Center */}
+        <div className="flex-1 flex justify-center px-8">
+
+          <div className="relative w-full max-w-md">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+
+            <input
+              placeholder="Search..."
+              className="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 bg-slate-50"
+            />
+          </div>
+
+        </div>
+
+        {/* Right */}
+        <div className="flex items-center gap-5">
+
+          {/* Branch Dropdown */}
+
+          {/* Notification */}
+
+          {/* Profile */}
+
+          {user?.role === "COMPANY_ADMIN" && activeBranch && branches.length > 0 && (
+            <div className="flex items-center gap-2">
+              <select
+                disabled={loadingBranches}
+                value={activeBranch?._id || ""}
+                onChange={handleSwitchBranch}
+                className="h-10 min-w-[220px] px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              >
+                <option value="">Select Branch</option>
+                {branches.map((branch) => (
+                  <option key={branch._id} value={branch._id}>
+                    {branch.branchName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button
+            onClick={() => router.push("/notifications")}
+            className="relative p-2 rounded-lg hover:bg-slate-100 transition"
+          >
+            <Bell size={20} className="text-slate-600" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          <div className="flex items-center gap-3">
+            <UserCircle2 size={36} className="text-emerald-600" />
+            <div>
+              <h4 className="text-sm font-semibold text-slate-800">{user?.name || "User"}</h4>
+              <p className="text-xs text-slate-500">{rolesLabel[user?.role] || "Member"}</p>
+            </div>
+          </div>
+
+        </div>
+
       </header>
     </>
   );

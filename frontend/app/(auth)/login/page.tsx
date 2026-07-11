@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/auth.service";
 import { saveAuth } from "@/lib/auth";
 import toast from "react-hot-toast";
+import { AlertCircle } from "lucide-react";
 
 import { useDispatch } from "react-redux";
 import { setAuth } from "@/store/slices/authSlice";
@@ -13,16 +14,34 @@ import Captcha, { CaptchaHandle } from "@/components/common/Captcha";
 import CustomInput from "@/components/common/CustomInput";
 import Link from "next/link";
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
   const [captchaInput, setCaptchaInput] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("session") === "expired";
+  });
 
   const captchaRef = useRef<CaptchaHandle>(null);
 
   const dispatch = useDispatch();
+
+  const handleSessionExpiredOk = () => {
+    setSessionExpired(false);
+
+    localStorage.removeItem('activeBranch');
+    router.replace("/login");
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -64,8 +83,9 @@ export default function LoginPage() {
         default:
           router.push("/employee/dashboard");
       }
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Login failed");
+    } catch (error: unknown) {
+      const message = (error as ApiError)?.response?.data?.message;
+      toast.error(message || "Login failed");
       // Regenerate captcha after any failed attempt (login or captcha) to prevent reuse
       captchaRef.current?.refresh();
       setCaptchaInput("");
@@ -76,6 +96,84 @@ export default function LoginPage() {
 
   return (
     <div className="login-bg h-screen flex overflow-hidden">
+      {sessionExpired && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="session-expired-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(15, 23, 42, .48)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 18,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 390,
+              background: "#fff",
+              borderRadius: 16,
+              border: "1.5px solid #fecaca",
+              boxShadow: "0 24px 60px rgba(15,23,42,.22)",
+              padding: "26px 24px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: "50%",
+                background: "#fef2f2",
+                color: "#dc2626",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 14px",
+              }}
+            >
+              <AlertCircle size={24} />
+            </div>
+            <h2
+              id="session-expired-title"
+              style={{
+                margin: "0 0 8px",
+                color: "#0f172a",
+                fontSize: 18,
+                fontWeight: 800,
+              }}
+            >
+              Session Expired
+            </h2>
+            <p style={{ margin: 0, color: "#64748b", fontSize: 13.5, lineHeight: 1.6 }}>
+              Your session is expired. Please login again.
+            </p>
+            <button
+              type="button"
+              onClick={handleSessionExpiredOk}
+              autoFocus
+              style={{
+                width: "100%",
+                marginTop: 22,
+                border: "none",
+                borderRadius: 10,
+                padding: "11px 16px",
+                color: "#fff",
+                background: "linear-gradient(135deg, #059669, #0891b2)",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── LEFT PANEL (unchanged) ── */}
       <div className="hidden lg:flex w-[52%] relative overflow-hidden flex-col justify-between p-14">

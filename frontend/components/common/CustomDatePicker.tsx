@@ -77,7 +77,8 @@ export default function CustomDatePicker({
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
 
   // Local selection state inside the modal
-  const [tempSelectedDate, setTempSelectedDate] = useState<Date | null>(null);
+  const today = new Date();
+  const [tempSelectedDate, setTempSelectedDate] = useState<Date | null>(today);
 
   // Sync component value with local states on open
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function CustomDatePicker({
         setViewYear(parsed.getFullYear());
       } else {
         const today = new Date();
-        setTempSelectedDate(null);
+        setTempSelectedDate(today);
         setViewMonth(today.getMonth());
         setViewYear(today.getFullYear());
       }

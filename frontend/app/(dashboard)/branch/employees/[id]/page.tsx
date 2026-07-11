@@ -20,6 +20,7 @@ import {
     Power,
     MapPinned,
     Loader2,
+    File,
 } from "lucide-react";
 import Button from "@/components/common/Button";
 import { getEmployeeById, updateEmployeeStatus } from "@/services/branch.service"; // ⚠️ adjust `updateEmployeeStatus` to your actual update endpoint function
@@ -292,6 +293,10 @@ export default function EmployeeViewPage() {
                             <InfoItem icon={<MapPin size={13} />} label="Pincode" value={employee.pincode} mono />
                         </SectionCard>
                     </SectionGroup>
+
+
+
+                    {/* Documents */}
 
                     {/* ── Status & Access Controls ── */}
                     <SectionGroup title="Status & Access">

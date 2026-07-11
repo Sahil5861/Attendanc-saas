@@ -249,22 +249,7 @@ export default function Table({ employees, loading, onCreate, onEdit, onView, on
 
 
                     {/* Status */}
-                    <td style={{ padding: "16px 18px" }}>
-                      {/* <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 5,
-                        background: employee.status === false ? "#fef2f2" : "#dcfce7",
-                        color: employee.status === false ? "#dc2626" : "#15803d",
-                        fontSize: 12, fontWeight: 600,
-                        padding: "4px 10px", borderRadius: 99,
-                        border: `1px solid ${employee.status === false ? "#fca5a5" : "#86efac"}`
-                      }}>
-                        <span style={{
-                          width: 6, height: 6, borderRadius: "50%",
-                          background: employee.status === false ? "#dc2626" : "#16a34a"
-                        }} />
-                        {employee.status === false ? "Inactive" : "Active"}
-                      </span> */}
-
+                    <td style={{ padding: "16px 18px" }}>                    
                       <CustomToggle
                         checked={employee.status}
                         onChange={(value) => updateEmployee(employee._id, value)}

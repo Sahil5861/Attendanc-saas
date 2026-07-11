@@ -78,9 +78,11 @@ export default function AttendancePage() {
     month: "long", year: "numeric"
   });
 
-  const reset = () => {
+  const reset = async() => {
     setcurrentMonth(today.getMonth())
     setcurrentYear(today.getFullYear())
+
+    await fetchEmployees();
   }
 
   // Fixed: this previously copied the goNextMonth wrap-around logic (checked
@@ -122,8 +124,11 @@ export default function AttendancePage() {
   const [form, setForm] = useState(defaultForm);
 
   const fetchEmployees = async () => {
+
+    setLoading(true);
     const res = await getEmployees();
     setEmployees(res.data.data);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -527,7 +532,7 @@ export default function AttendancePage() {
                           const joiningDate = new Date(employee.joiningDate);
                           joiningDate.setHours(0, 0, 0, 0);
 
-                          const isFutureDate = cellDate > currentDate;
+                          // const isFutureDate = cellDate > currentDate;
                           const beforeJoining = cellDate < joiningDate;
 
                           // Fixed: `employee.attendance` can be undefined per the
@@ -546,11 +551,11 @@ export default function AttendancePage() {
 
                           const status = attendanceRecord?.status || '-';
 
-                          if (!isFutureDate && !beforeJoining) {
+                          if (!beforeJoining) {
                             label = status == 'present' ? 'P' : status == 'absent' ? 'A' : status == 'onLeave' ? 'L' : isWeekend ? 'H' : '-';
                           }
                           const cfg = STATUS_CONFIG[label] ?? STATUS_CONFIG["-"];
-                          const hasRecord = !isFutureDate && !beforeJoining;
+                          const hasRecord = !beforeJoining;
 
                           return (
                             <td key={day} className="p-1.5 text-center">

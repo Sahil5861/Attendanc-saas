@@ -141,13 +141,7 @@ export default function ForgotPasswordPage() {
             const res = await verifyForgotPasswordOtp(payload);
 
             if (res?.data?.success) {
-                toast.success(res.data.message || "OTP verified");
-                // Pass email + reset token forward so the reset-password page can
-                // authorize the password change without asking to log in again.
-                // const resetToken = res.data.resetToken || "";
-                // router.push(
-                //     `/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(resetToken)}`
-                // );
+                toast.success(res.data.message || "OTP verified");                
 
                 setStep("reset");
             } else {

@@ -1,18 +1,17 @@
 import Cookies from "js-cookie";
 
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "@/store";
-
-
 export const TOKEN_KEY = "access_token";
 export const USER_KEY = "user";
 
+interface AuthUser {
+  role?: string;
+  [key: string]: unknown;
+}
+
 export const saveAuth = (
   token: string,
-  user: any
+  user: AuthUser
 ) => {
-
-  console.log('user is this =>: ', user);
 
   localStorage.setItem("role", user?.role || "");
   
@@ -21,6 +20,7 @@ export const saveAuth = (
     token,
     {
       expires: 7,
+      // expires: 30 / 86400,
     }
   );
 
@@ -29,6 +29,7 @@ export const saveAuth = (
     user?.role || "",
     {
       expires: 7,
+      // expires: 30 / 86400,
     }
   )
 
@@ -37,6 +38,7 @@ export const saveAuth = (
     JSON.stringify(user),
     {
       expires: 7,
+      // expires: 30 / 86400,
     }
   );
 };
@@ -46,7 +48,11 @@ export const logout = () => {
 
   Cookies.remove(USER_KEY);
 
+  Cookies.remove('role');
+
   Cookies.remove('active_branch_id')
+
+  localStorage.removeItem('role');
 
   localStorage.removeItem('activeBranch');
 };

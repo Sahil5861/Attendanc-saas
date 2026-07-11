@@ -7,7 +7,6 @@ import Modal, { defaultForm } from "@/components/Leaves/modal";
 import { createLeave, deleteLeave, getLeave } from "@/services/employee.service";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
-
 import { RootState } from "@/store";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 

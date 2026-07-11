@@ -1,6 +1,6 @@
 import axios from "axios";
 import Cookies from "js-cookie";
-import { getToken, getUser } from "@/lib/auth";
+import { getToken, logout } from "@/lib/auth";
 
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL
@@ -24,6 +24,21 @@ api.interceptors.request.use(
       config.headers['X-Branch-Id'] = branchId;
     }
     return config;
+  }
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401 && typeof window !== "undefined") {
+      logout();
+
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login?session=expired";
+      }
+    }
+
+    return Promise.reject(error);
   }
 );
 

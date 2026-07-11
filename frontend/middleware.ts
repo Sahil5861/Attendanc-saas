@@ -1,5 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const AUTH_COOKIES = ["access_token", "user", "role", "active_branch_id"];
+
+function isTokenExpired(token?: string) {
+  if (!token) return true;
+
+  try {
+    const payloadPart = token.split(".")[1] || "";
+    const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const payload = JSON.parse(atob(padded));
+
+    if (!payload?.exp) return false;
+
+    return payload.exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+}
+
+function redirectToLogin(request: NextRequest) {
+  const loginUrl = new URL("/login", request.url);
+  loginUrl.searchParams.set("session", "expired");
+  const response = NextResponse.redirect(loginUrl);
+
+  AUTH_COOKIES.forEach((name) => {
+    response.cookies.set(name, "", {
+      path: "/",
+      maxAge: 0,
+    });
+  });
+  
+
+  return response;
+}
+
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
   const activeBranch = request.cookies.get("active_branch_id")?.value;
@@ -14,8 +49,10 @@ export function middleware(request: NextRequest) {
     path.startsWith("/branch") ||
     path.startsWith("/employee");
 
-  if (path.startsWith("/branch") && !activeBranch) {
-    return NextResponse.redirect(new URL("/company/dashboard", request.url));
+  const hasValidToken = Boolean(token) && !isTokenExpired(token);
+
+  if (isProtected && !hasValidToken) {
+    return redirectToLogin(request);
   }
 
   let url = "";
@@ -26,7 +63,7 @@ export function middleware(request: NextRequest) {
     case "COMPANY_ADMIN":
       url = activeBranch ? "/branch/dashboard" : "/company/dashboard";
       break;
-    case "BRANCH_ADMIN":
+    case "BRANCH_MANAGER":
       url = "/branch/dashboard";
       break;
     case "EMPLOYEE":
@@ -34,12 +71,16 @@ export function middleware(request: NextRequest) {
       break;
   }
 
-  if (token && isAuthPage) {
+  if (hasValidToken && isAuthPage) {
     return NextResponse.redirect(new URL(url, request.url));
   }
 
-  if (!token && isProtected) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (token && !hasValidToken) {
+    return redirectToLogin(request);
+  }
+
+  if (hasValidToken && path.startsWith("/branch") && !activeBranch && role === "COMPANY_ADMIN") {
+    return NextResponse.redirect(new URL("/company/dashboard", request.url));
   }
 
   return NextResponse.next();

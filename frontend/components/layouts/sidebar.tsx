@@ -22,6 +22,9 @@ export default function Sidebar() {
   const permissions = useSelector((state: RootState) => state.auth.permissions);
   const activeBranch = useSelector((state: RootState) => state.branch.activeBranch);
   const user = useSelector((state: RootState) => state.auth.user);
+  const collapsed = useSelector((state:RootState) => state.layout.sidebarCollapsed);
+
+  // const collapsed = false;
   const role = user?.role;
 
   console.log("activeBranch : ", activeBranch);
@@ -121,7 +124,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="sidebar-bg w-72 h-screen shrink-0 p-5 flex flex-col overflow-y-auto">
+    <aside className={`sidebar-bg ${collapsed ? "w-0" : "w-72"} h-screen shrink-0 p-5 ${ collapsed  ? "px-0" : ''} flex flex-col overflow-y-auto transition-all duration-300 ease-in-out`}>
       <div>
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-white">Attendance</h1>

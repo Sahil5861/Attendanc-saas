@@ -24,14 +24,15 @@ export default function LeavePage() {
 
     const fetchLeaves = async () => {
         try {
-            setLoading(true);
+            // setLoading(true);
+
+            console.log("Fetch Leaves called !!");
+            
 
             const res = await getLeaves();
             setLeaves(res.data.data);
         } catch (error) {
             console.error("Error fetching leaves:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
