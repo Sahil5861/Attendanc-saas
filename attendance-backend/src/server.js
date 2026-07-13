@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 5000;
 (async () => {
     await connectDB();
     require("./cron/attendanceCron");
+    require("./cron/autoCheckoutCron");
 
     server.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);

@@ -85,14 +85,41 @@ const branchSettingsSchema = new mongoose.Schema(
         },
 
         startTime: {
-            type:String,
+            type: String,
         },
         endTime: {
-            type:String,
+            type: String,
         },
         recess: {
-            type:String,
-        }
+            type: String,
+        },
+        recessEnd: {
+            type: String,
+        },
+        sickLeave: {
+            type: Number,
+            default: 2,
+        },
+
+        casualLeave: {
+            type: Number,
+            default: 2,
+        },
+
+        paidLeave: {
+            type: Number,
+            default: 1,
+        },
+
+        carryForward: {
+            type: Boolean,
+            default: true,
+        },
+
+        maxCarryForward: {
+            type: Number,
+            default: 12,
+        },
     },
     {
         timestamps: true,

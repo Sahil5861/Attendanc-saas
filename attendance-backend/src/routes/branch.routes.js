@@ -45,6 +45,8 @@ router.get("/employees", employeeController.getEmployees);
 router.post("/employees", upload.single("image"), employeeController.createEmployees);
 router.put("/employees/:id", upload.single("image"), employeeController.updateEmployees);
 
+
+
 router.patch("/employee/:id/status", employeeController.updateEmployeeStatus);
 
 
@@ -82,4 +84,7 @@ router.delete("/teams/:id", branchController.deleteTeams);
 // Leaves
 router.get('/leaves', leaveController.getLeavesForBranches);
 router.put('/leaves/:id/:status', leaveController.updateLeaveStatus);
+
+
+
 module.exports = router;

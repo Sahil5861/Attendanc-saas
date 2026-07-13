@@ -7,10 +7,244 @@ const Branch = require("../../models/Branch");
 const Employee = require('../../models/Employee');
 const Role = require("../../models/Role");
 const Attendance = require("../../models/Attendance");
-
-
 const EmployeeSalary = require("../../models/EmployeeSalary");
 const BranchSettings = require("../../models/BranchSettings");
+const EmployeeDocument = require("../../models/EmployeeDocument");
+
+const getLoggedInEmployee = async (userId) => {
+    const user = await User.findById(userId);
+
+    if (!user || !user.employeeId) {
+        return { user, employee: null };
+    }
+
+    const employee = await Employee.findById(user.employeeId)
+        .populate("designation")
+        .populate("department")
+        .populate("branch_id")
+        .populate("company_id");
+
+    return { user, employee };
+};
+
+exports.getProfile = async (req, res) => {
+    try {
+        const { user, employee } = await getLoggedInEmployee(req.user.id);
+
+        if (!user || !employee) {
+            return res.status(404).json({
+                success: false,
+                message: "Employee profile not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                employee,
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    role: user.role,
+                    status: user.status,
+                },
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const { user, employee } = await getLoggedInEmployee(req.user.id);
+
+        if (!user || !employee) {
+            return res.status(404).json({
+                success: false,
+                message: "Employee profile not found",
+            });
+        }
+
+        const {
+            firstName,
+            lastName,
+            email,
+            phone,
+            address,
+            city,
+            state,
+            country,
+            pincode,
+        } = req.body;
+
+        if (!firstName?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "First name is required",
+            });
+        }
+
+        if (!email?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required",
+            });
+        }
+
+        if (!phone?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Phone number is required",
+            });
+        }
+
+        const duplicateUser = await User.findOne({
+            email: email.toLowerCase(),
+            _id: { $ne: user._id },
+        });
+
+        const duplicateEmployee = await Employee.findOne({
+            email: email.toLowerCase(),
+            _id: { $ne: employee._id },
+        });
+
+        if (duplicateUser || duplicateEmployee) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is already in use",
+            });
+        }
+
+        const update = {
+            firstName,
+            lastName,
+            email,
+            phone,
+            address,
+            city,
+            state,
+            country,
+            pincode,
+        };
+
+        if (req.file) {
+            update.image = req.file.filename;
+        }
+
+        const updatedEmployee = await Employee.findByIdAndUpdate(
+            employee._id,
+            { $set: update },
+            { new: true, runValidators: true }
+        )
+            .populate("designation")
+            .populate("department")
+            .populate("branch_id")
+            .populate("company_id");
+
+        const my_user = await User.findByIdAndUpdate(user._id,
+            {
+                $set: {
+                    name: `${firstName} ${lastName || ""}`.trim(),
+                    email,
+                    phone,
+                },
+
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            data: {
+                employee: updatedEmployee,
+                user: my_user,
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+exports.changeProfilePassword = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (!user || !user.employeeId) {
+            return res.status(404).json({
+                success: false,
+                message: "Employee user not found",
+            });
+        }
+
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "All password fields are required",
+            });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: "New password must be at least 8 characters",
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "New password and confirm password do not match",
+            });
+        }
+
+        const matched = await bcrypt.compare(currentPassword, user.password);
+
+        if (!matched) {
+            return res.status(400).json({
+                success: false,
+                message: "Current password is incorrect",
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        user.password = hashedPassword;
+        user.realPassword = newPassword;
+        await user.save();
+
+        await Employee.findByIdAndUpdate(user.employeeId, {
+            $set: { password: hashedPassword },
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Password updated successfully",
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
 
 exports.getEmployeeById = async (req, res) => {
     const { id } = req.params;
@@ -474,7 +708,7 @@ exports.chekinEmployee = async (req, res) => {
             if (now < startTime) {
                 return res.status(400).json({
                     success: false,
-                    message: `Check-in starts at ${ formatTime(branchSettings.startTime)}`,
+                    message: `Check-in starts at ${formatTime(branchSettings.startTime)}`,
                 });
             }
         }
@@ -850,6 +1084,134 @@ exports.updateEmployeeSalary = async (req, res) => {
         console.error(error);
         return res.status(500).json({
             success: false,
+        });
+    }
+}
+
+
+// documents
+exports.getDocs = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const docs = await EmployeeDocument.find({
+            employeeId: id
+        }).sort({ createdAt: -1 });
+
+
+        return res.status(200).json({
+            success: true, data: docs
+        });
+
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false, message: error.message
+        })
+    }
+}
+
+exports.createDocs = async (req, res) => {
+    try {
+
+        const {
+            documentName,
+            documentType,
+            documentNumber,
+            issueDate,
+            expiryDate,
+            employeeId,
+        } = req.body;
+
+        // Validation
+        if (!documentName?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Document name is required.",
+            });
+        }
+
+        if (!documentType?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Document type is required.",
+            });
+        }
+
+        if (!documentNumber?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Document number is required.",
+            });
+        }
+
+        if (!issueDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Issue date is required.",
+            });
+        }
+
+        if (!expiryDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Expiry date is required.",
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Please upload a document.",
+            });
+        }
+
+        const document = await EmployeeDocument.create({
+            documentName,
+            documentType,
+            documentNumber,
+            employeeId,
+            issueDate,
+            expiryDate,
+            fileName: req.file.filename,
+            originalName: req.file.originalname,
+            file: req.file.path,
+            mimeType: req.file.mimetype,
+            fileSize: req.file.size,
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Document uploaded successfully.",
+            data: document,
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+
+    }
+};
+
+
+exports.deleteDocs = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const doc = await EmployeeDocument.findByIdAndDelete(id);
+
+        return res.status(200).json({
+            success: true, message: 'Documnet deleted successfully !'
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: fasle, message: error.message
         });
     }
 }

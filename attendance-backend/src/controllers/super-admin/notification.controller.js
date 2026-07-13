@@ -65,3 +65,35 @@ exports.markAsRead = async (req, res) => {
         return res.status(500).json({ success: false, message: "Server Error" });
     }
 };
+
+exports.markAllRead = async (req, res) => {
+    try {
+        const branchId = req.get("X-Branch-Id");
+
+        const result = await Notification.updateMany(
+            {
+                receiverId: branchId,
+                isRead: false,
+            },
+            {
+                $set: {
+                    isRead: true,
+                },
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "All notifications marked as read.",
+            modifiedCount: result.modifiedCount,
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};

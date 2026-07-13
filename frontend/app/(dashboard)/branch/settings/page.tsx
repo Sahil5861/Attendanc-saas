@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
     Building2,
+    CalendarDays,
     Clock,
     Clock1,
     Globe2,
@@ -18,6 +19,8 @@ import { getBranchSettings, updateBranchSettings } from "@/services/branchSettin
 import CustomInput from "@/components/common/CustomInput";
 import CustomSelect from "@/components/common/CustomSelect";
 import { getStates, getCitiesByState } from "@/services/super-admin.service";
+import CustomTimePicker from "@/components/common/CustomTimePicker";
+import { useMemo } from "react";
 
 interface BranchSettingsForm {
     branchName: string;
@@ -36,6 +39,12 @@ interface BranchSettingsForm {
     startTime: string;
     endTime: string;
     recess: string;
+    recessEnd: string;
+    sickLeave: number,
+    casualLeave: number,
+    paidLeave: number,
+    carryForward: boolean,
+    maxCarryForward: 12,
     latitude: number | null;
     longitude: number | null;
 }
@@ -57,6 +66,12 @@ const DEFAULT_FORM: BranchSettingsForm = {
     startTime: "",
     endTime: "",
     recess: "",
+    recessEnd: "",
+    sickLeave: 2,
+    casualLeave: 2,
+    paidLeave: 1,
+    carryForward: true,
+    maxCarryForward: 12,
     latitude: null,
     longitude: null,
 };
@@ -74,13 +89,13 @@ const TIMEZONES = [
 
 
 interface State {
-    _id:string;
+    _id: string;
     stateId: string;
     name: string;
 };
 
 interface City {
-    _id:string;
+    _id: string;
     stateId: string;
     cityId: string;
     name: string;
@@ -95,6 +110,52 @@ export default function BranchSettingsPage() {
     const [states, setStates] = useState<State[]>([]);
     const [cities, setCities] = useState<City[]>([]);
     const [selectedState, setSelectedState] = useState<State | null>(null);
+
+
+
+    const calculateWorkingHours = (
+        startTime: string,
+        endTime: string,
+        recess: string,
+        recessEnd: string
+    ) => {
+        if (!startTime || !endTime) return "0h 0m";
+
+        const start = new Date(`2000-01-01T${startTime}`);
+        const end = new Date(`2000-01-01T${endTime}`);
+
+        let totalMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+
+        if (recess && recessEnd) {
+            const recessStart = new Date(`2000-01-01T${recess}`);
+            const recessFinish = new Date(`2000-01-01T${recessEnd}`);
+
+            const recessMinutes =
+                (recessFinish.getTime() - recessStart.getTime()) / (1000 * 60);
+
+            totalMinutes -= recessMinutes;
+        }
+
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = Math.floor(totalMinutes % 60);
+
+        return `${hours}h ${minutes}m`;
+    };
+
+
+    const workingHours = useMemo(() => {
+        return calculateWorkingHours(
+            form.startTime,
+            form.endTime,
+            form.recess,
+            form.recessEnd
+        );
+    }, [
+        form.startTime,
+        form.endTime,
+        form.recess,
+        form.recessEnd,
+    ]);
 
 
 
@@ -159,7 +220,7 @@ export default function BranchSettingsPage() {
             const data = response?.data?.data;
 
             console.log('data : ', data);
-            
+
 
             if (data) {
                 setForm((prev) => ({
@@ -229,7 +290,7 @@ export default function BranchSettingsPage() {
             console.log('form : ', form);
 
             // const payload = ...form, 
-            
+
             await updateBranchSettings(form);
             toast.success("Branch settings saved");
         } catch (error: unknown) {
@@ -289,15 +350,6 @@ export default function BranchSettingsPage() {
                         <h2 className="text-base font-bold text-slate-900">Basic Information</h2>
                     </div>
 
-                    {/* <Field label="Branch Name">
-            <input
-              value={form.branchName}
-              onChange={(e) => handleChange("branchName", e.target.value)}
-              placeholder="e.g. Beta Company - Andheri Branch"
-              className="input"
-            />
-          </Field> */}
-
                     <CustomInput
                         label="Branch Name"
                         value={form.branchName}
@@ -306,15 +358,7 @@ export default function BranchSettingsPage() {
                     />
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* <Field label="Email" icon={<Mail size={14} />}>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="branch@company.com"
-                className="input"
-              />
-            </Field> */}
+                    
 
                         <CustomInput
                             label="Email"
@@ -363,16 +407,6 @@ export default function BranchSettingsPage() {
                         />
 
 
-
-                        {/* <Field label="City">
-              <input
-                value={form.city}
-                onChange={(e) => handleChange("city", e.target.value)}
-                className="input"
-              />
-            </Field> */}
-
-
                         <CustomSelect
                             label="City"
                             value={form.city}
@@ -384,16 +418,7 @@ export default function BranchSettingsPage() {
                                     { label: city.name, value: city.cityId }
                                 ))
                             ]}
-                        />
-                        {/* <Field label="State">
-              <input
-                value={form.state}
-                onChange={(e) => handleChange("state", e.target.value)}
-                className="input"
-              />
-            </Field> */}
-
-
+                        />                    
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -474,8 +499,8 @@ export default function BranchSettingsPage() {
                                     key={format}
                                     onClick={() => handleChange("timeFormat", format)}
                                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition ${form.timeFormat === format
-                                            ? "bg-emerald-600 border-emerald-600 text-white"
-                                            : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                        ? "bg-emerald-600 border-emerald-600 text-white"
+                                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                                         }`}
                                 >
                                     {format}-hour
@@ -508,38 +533,122 @@ export default function BranchSettingsPage() {
                                 </p>
                             </div>
                         </div>
+                        <div
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 disabled:opacity-60 transition"
+                        >
+                            <span>
+                                {locating
+                                    ? "Locating..."
+                                    : `Working Hours: ${workingHours}`}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+
+
+                        <CustomTimePicker
+                            label="Start Time"
+                            value={form.startTime}
+                            onChange={(e) => handleChange('startTime', e.target.value)}
+                        />
+
+                        <CustomTimePicker
+                            label="End Time"
+                            value={form.endTime}
+                            onChange={(e) => handleChange('endTime', e.target.value)}
+                        />
+                        <CustomTimePicker
+                            label="recess"
+                            value={form.recess}
+                            onChange={(e) => handleChange('recess', e.target.value)}
+                        />
+                        <CustomTimePicker
+                            label="recess End Time"
+                            value={form.recessEnd}
+                            onChange={(e) => handleChange('recessEnd', e.target.value)}
+                        />
+                    </div>
+                </div>
+
+
+                {/* ---- Leave Policy ---- */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5 lg:col-span-2">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-3">
+                            <span className="h-10 w-10 rounded-xl bg-emerald-50 border border-indigo-100 flex items-center justify-center text-emerald-600">
+                                <CalendarDays size={18} />
+                            </span>
+
+                            <div>
+                                <h2 className="text-base font-bold text-slate-900">
+                                    Leave Policy
+                                </h2>
+                                <p className="text-xs text-slate-500">
+                                    Configure monthly leave entitlement for each employee.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 disabled:opacity-60 transition">
+                            Total Paid Leaves:{" "}
+                            {Number(form.sickLeave || 0) +
+                                Number(form.casualLeave || 0) +
+                                Number(form.paidLeave || 0)}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
                         <CustomInput
-                            type="time"
-                            label="Start Time"
-                            value={form.startTime}
-                            onChange={((e) => handleChange('startTime', e.target.value))}
+                            type="number"
+                            min={0}
+                            label="Sick Leave / Month"
+                            value={form.sickLeave}
+                            onChange={(e) => handleChange("sickLeave", e.target.value)}
                         />
 
                         <CustomInput
-                            type="time"
-                            label="End Time"
-                            value={form.endTime}
-                            onChange={((e) => handleChange('endTime', e.target.value))}
+                            type="number"
+                            min={0}
+                            label="Casual Leave / Month"
+                            value={form.casualLeave}
+                            onChange={(e) => handleChange("casualLeave", e.target.value)}
                         />
-
-                        {/* <Field label="Longitude">
-                            <input
-                                type="time"
-                                value={form.recess ?? ""}                                
-                                placeholder="Not captured yet"
-                                className="input bg-slate-50 text-slate-500"
-                            />
-                        </Field> */}
 
                         <CustomInput
-                            type="time"
-                            label="Recess"
-                            value={form.recess}
-                            onChange={((e) => handleChange('recess', e.target.value))}
+                            type="number"
+                            min={0}
+                            label="Paid Leave / Month"
+                            value={form.paidLeave}
+                            onChange={(e) => handleChange("paidLeave", e.target.value)}
                         />
+
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                        <CustomSelect
+                            label="Carry Forward"
+                            value={form.carryForward}
+                            onChange={(e) => handleChange("carryForward", e.target.value)}
+                            options={[
+                                { label: "Yes", value: true },
+                                { label: "No", value: false  },
+                            ]}
+                        />
+
+                        <CustomInput
+                            type="number"
+                            min={0}
+                            label="Maximum Carry Forward Leaves"
+                            value={form.maxCarryForward}
+                            onChange={(e) =>
+                                handleChange("maxCarryForward", e.target.value)
+                            }
+                            disabled={form.carryForward !== true}
+                        />
+
                     </div>
                 </div>
 

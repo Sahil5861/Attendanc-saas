@@ -27,7 +27,7 @@ export const defaultForm: Form = {
     reason: "",
     daysType: "",
     type: "",
-    status: "pending",
+    status: "PENDING",
     date: null,
     fromDate: null,
     toDate: null,
@@ -60,7 +60,7 @@ export default function LeaveModal({
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                zIndex: 9999, padding: "20px 16px",
+                zIndex: 999, padding: "20px 16px",
             }}
         >
             <div style={{
@@ -104,11 +104,10 @@ export default function LeaveModal({
                                     type: e.target.value,
                                 }))
                             }
-                            options={[
-                                { label: "Select Type", value: "" },
-                                { label: "Sick Leave", value: "sick" },
-                                { label: "Casual Leave", value: "casual" },
-                                { label: "Paid Leave", value: "paid" },
+                            options={[                                
+                                { label: "Sick Leave", value: "SICK" },
+                                { label: "Casual Leave", value: "CASUAL" },
+                                { label: "Paid Leave", value: "PAID" },
                             ]}
                         />
 
@@ -125,8 +124,7 @@ export default function LeaveModal({
                                     toDate: null,
                                 }))
                             }
-                            options={[
-                                { label: "Select Days Type", value: "" },
+                            options={[                            
                                 { label: "Single Day", value: "single" },
                                 { label: "Multiple Days", value: "multiple" },
                             ]}
@@ -169,10 +167,10 @@ export default function LeaveModal({
 
                     {form.daysType == 'multiple' && (
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-                            <CustomInput
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>                          
+
+                            <CustomDatePicker
                                 label="From Date"
-                                type="date"
                                 value={toDateInputValue(form.fromDate)}
                                 onChange={(e) =>
                                     setForm((prev: Form) => ({
@@ -182,11 +180,10 @@ export default function LeaveModal({
                                             : null,
                                     }))
                                 }
+                                placeholder="Select From Date"                                
                             />
-
-                            <CustomInput
+                            <CustomDatePicker
                                 label="To Date"
-                                type="date"
                                 value={toDateInputValue(form.toDate)}
                                 onChange={(e) =>
                                     setForm((prev: Form) => ({
@@ -196,6 +193,7 @@ export default function LeaveModal({
                                             : null,
                                     }))
                                 }
+                                placeholder="Select From Date"                                
                             />
                         </div>
                     )}
@@ -211,7 +209,7 @@ export default function LeaveModal({
                                 }))
                             }
                             options={[
-                                { label: "Pending", value: "pending" }
+                                { label: "Pending", value: "PENDING" }
                             ]}
                         />
                     </div>

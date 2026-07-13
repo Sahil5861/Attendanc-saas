@@ -67,16 +67,16 @@ export default function LeaveTable({ leaves, onCreate, onDelete }: Props) {
     );
   }, [leaves, search]);
 
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) =>
-      sortDir === "asc"
-        ? a.reason.toLowerCase().localeCompare(b.reason.toLowerCase())
-        : b.reason.toLowerCase().localeCompare(a.reason.toLowerCase())
-    );
-  }, [filtered, sortDir]);
+  // const sorted = useMemo(() => {
+  //   return [...filtered].sort((a, b) =>
+  //     sortDir === "asc"
+  //       ? a.reason.toLowerCase().localeCompare(b.reason.toLowerCase())
+  //       : b.reason.toLowerCase().localeCompare(a.reason.toLowerCase())
+  //   );
+  // }, [filtered, sortDir]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const paginated = sorted.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const thStyle = (sortable?: boolean): React.CSSProperties => ({
     padding: "14px 18px",

@@ -249,7 +249,7 @@ export default function Header() {
             onClick={() => dispatch(toggleSidebar())}
             className="p-2 rounded-lg hover:bg-slate-100 transition"
           >
-            <PanelLeft size={20} />
+            <PanelLeft size={20} color="#333"/>
           </button>
 
           {collapsed && (

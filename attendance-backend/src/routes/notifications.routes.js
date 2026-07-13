@@ -26,6 +26,7 @@ router.get('/unread-count', notificationController.getUnreadCount);
 router.get('/', notificationController.getNotifications);
 router.get('/getNotifications', notificationController.getNotifications);
 router.patch('/:id/read', notificationController.markAsRead);
+router.patch('/read', notificationController.markAllRead);
 router.get('/markAsRead', notificationController.markAsRead);
 
 module.exports = router;

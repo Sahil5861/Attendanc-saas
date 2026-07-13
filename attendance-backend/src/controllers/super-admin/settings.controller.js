@@ -25,6 +25,12 @@ exports.saveBranchSettings = async (req, res) => {
             startTime,
             endTime,
             recess,
+            recessEnd,
+            sickLeave,
+            casualLeave,
+            paidLeave,
+            carryForward,
+            maxCarryForward,
 
             logo,
         } = req.body;
@@ -68,6 +74,12 @@ exports.saveBranchSettings = async (req, res) => {
                 startTime,
                 endTime,
                 recess,
+                recessEnd,
+                sickLeave,
+                casualLeave,
+                paidLeave,
+                carryForward,
+                maxCarryForward,
             },
             {
                 new: true,
@@ -108,14 +120,14 @@ exports.getBranchSettings = async (req, res) => {
             companyId,
         });
 
-        if(settings){
+        if (settings) {
 
             return res.status(200).json({
                 success: true,
                 data: settings,
             });
         }
-        else{
+        else {
             const branch = await Branch.findById(branchId);
 
             const my_data = {

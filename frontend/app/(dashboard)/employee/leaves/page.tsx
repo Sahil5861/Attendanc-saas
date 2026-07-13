@@ -20,6 +20,18 @@ export default function LeavePage() {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [form, setForm] = useState(defaultForm);
 
+
+    // LEAVES SUMMARY
+    const [totalSickLeves, setTotalSickLeaves] = useState(0);
+    const [totalCasualLeves, setTotalCasualLeaves] = useState(0);
+    const [totalPaidLeves, setTotalPaidLeaves] = useState(0);
+
+
+    
+    const [usedSickLeves, setUsedSickLeaves] = useState(0);
+    const [usedCasualLeves, setUsedCasualLeaves] = useState(0);
+    const [usedPaidLeves, setUsedPaidLeaves] = useState(0);
+
     const user = useSelector((state: RootState) => state.auth.user);
     const employeeId = user?.employeeId;
 
@@ -29,6 +41,17 @@ export default function LeavePage() {
 
             const res = await getLeave(employeeId);
             setLeaves(res.data.data);
+
+            const leaveSummary = res.data.leaveSummary;
+            setTotalSickLeaves(leaveSummary.sick.total)
+            setTotalCasualLeaves(leaveSummary.casual.total)
+            setTotalPaidLeaves(leaveSummary.paid.total)
+
+            
+            setUsedSickLeaves(leaveSummary.sick.used)
+            setUsedCasualLeaves(leaveSummary.casual.used)
+            setUsedPaidLeaves(leaveSummary.paid.used)
+
         } catch (error) {
             console.error("Error fetching leaves:", error);
         } finally {
@@ -70,6 +93,33 @@ export default function LeavePage() {
     const handleSubmit = async () => {
         setLoading(true);
         try {
+
+            const leaveType = form.type;
+
+            let remainig = 0;
+            switch(leaveType) {
+                case 'SICK':
+                remainig = totalSickLeves - usedSickLeves;
+                break;
+
+                case 'CASUAL':
+                remainig = totalCasualLeves - usedCasualLeves;
+                break;
+
+                case 'PAID':
+                remainig = totalPaidLeves - usedPaidLeves;
+                break;
+
+                default: 
+                remainig = 0;
+
+            };
+
+            if (remainig === 0) {
+                toast.error(`You have no ${leaveType.toLowerCase()} leaves available`)
+
+                return;
+            }
             const data = {
                 reason: form.reason,
                 daysType: form.daysType,

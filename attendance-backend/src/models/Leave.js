@@ -9,13 +9,16 @@ const LeaveSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    type :{
-        type: String,
-        required: true,
+    type: {
+      type: String,
+      enum: ["SICK", "CASUAL", "PAID"],
+      required: true,
     },
-    status :{
-        type: String,
-        required: true,
+
+    status: {
+      type: String,
+      enum: ["PENDING", "APPROVED", "REJECTED"],
+      default: "PENDING",
     },
     date :{
         type: Date,

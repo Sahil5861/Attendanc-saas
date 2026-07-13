@@ -138,7 +138,7 @@ export default function LeaveTable({ leaves }: Props) {
     borderBottom: "1.5px solid #d1fae5",
   });
 
-  const handleDecision = async (leave: Leave, decision: "approved" | "rejected") => {
+  const handleDecision = async (leave: Leave, decision: "APPROVED" | "REJECTED") => {
     if (actioningId) return;
 
     try {
@@ -151,7 +151,7 @@ export default function LeaveTable({ leaves }: Props) {
           prev.map((item) => (item._id === leave._id ? { ...item, status: decision } : item))
         );
       } else {
-        toast.error(res?.data?.message || `Failed to ${decision === "approved" ? "approve" : "reject"} leave`);
+        toast.error(res?.data?.message || `Failed to ${decision === "APPROVED" ? "approve" : "reject"} leave`);
       }
     } catch (error) {
       console.error(error);
@@ -225,7 +225,7 @@ export default function LeaveTable({ leaves }: Props) {
 
                 const mode = leave.daysType === 'single' ? 'Full Day' : 'Multi Day';
                 const numberOfDays = calcNumberOfDays(leave);
-                const isPending = leave.status === "pending";
+                const isPending = leave.status === "PENDING";
                 const isActioning = actioningId === leave._id;
 
                 return (
@@ -341,7 +341,7 @@ export default function LeaveTable({ leaves }: Props) {
                           title="Approve"
                           outline
                           disabled={!isPending || isActioning}
-                          onClick={() => handleDecision(leave, "approved")}
+                          onClick={() => handleDecision(leave, "APPROVED")}
                         />
 
                         <Button
@@ -350,7 +350,7 @@ export default function LeaveTable({ leaves }: Props) {
                           title="Reject"
                           outline
                           disabled={!isPending || isActioning}
-                          onClick={() => handleDecision(leave, "rejected")}
+                          onClick={() => handleDecision(leave, "REJECTED")}
                         />
                       </div>
                     </td>
