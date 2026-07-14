@@ -210,11 +210,11 @@ export const sidebarItems = {
       icon: CalendarDays,
     },
 
-    {
-      title: "Payslips",
-      href: "/employee/payslips",
-      icon: Wallet,
-    },
+    // {
+    //   title: "Payslips",
+    //   href: "/employee/payslips",
+    //   icon: Wallet,
+    // },
 
     {
       title: "Documents",
