@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
 
 
 
-router.get("/states", async (req, res) => {
+router.post("/states", async (req, res) => {
     try {
         const data = await State.find({
             countryId: 101
@@ -46,7 +46,7 @@ router.get("/states", async (req, res) => {
 });
 
 
-router.get('/courses', async(req, res) =>{
+router.post('/courses', async(req, res) =>{
     try{
         const courses = [
             {
@@ -84,10 +84,10 @@ router.get('/courses', async(req, res) =>{
 })
 
 
-router.get("/cities-by-state/:id", async (req, res) => {
+router.post("/cities-by-state/:id", async (req, res) => {
 
     try {
-        const { id } = req.params;
+        const { id } = req.body;
 
 
         const data = await City.find({
