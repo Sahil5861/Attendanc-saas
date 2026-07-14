@@ -46,6 +46,44 @@ router.get("/states", async (req, res) => {
 });
 
 
+router.get('/courses', async(req, res) =>{
+    try{
+        const courses = [
+            {
+                id: 1, 
+                name: 'MBA'
+            },
+            {
+                id: 1, 
+                name: 'BBA'
+            },
+            {
+                id: 1, 
+                name: 'BCA'
+            },
+            {
+                id: 1, 
+                name: 'MCA'
+            },
+            {
+                id: 1, 
+                name: 'B.TECH'
+            },
+
+
+        ]
+        return res.status(200).json({
+            success: true, data: courses
+        });
+    }
+    catch(error){
+        return res.status(500).json({
+            success: false, message: error.message
+        });
+    }
+})
+
+
 router.get("/cities-by-state/:id", async (req, res) => {
 
     try {
