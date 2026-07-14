@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/test",require("./routes/test.routes"));
+app.use("/api/whatsapp",require("./routes/whatsapp.routes"));
 app.use("/api/super-admin",require("./routes/super-admin.routes"));
 app.use("/api/company",require("./routes/company.routes"));
 app.use("/api/branch",require("./routes/branch.routes"));
