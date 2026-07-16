@@ -172,14 +172,20 @@ exports.getEmployeeData = async (req, res) => {
         const { id } = req.params;
 
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
 
         const attendance = await Attendance.findOne({
             employeeId: id,
-            status: 'present',
-            attendanceDate: today,
-        })
+            status: "present",
+            attendanceDate: {
+                $gte: start,
+                $lte: end,
+            },
+        });
 
         const history = await Attendance.find({
             employeeId: id,
