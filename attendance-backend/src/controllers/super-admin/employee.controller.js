@@ -1,4 +1,7 @@
 const bcrypt = require("bcryptjs");
+const moment = require("moment-timezone");
+
+
 const { getDistanceInMeters } = require("../../utils/geo");
 
 
@@ -10,6 +13,9 @@ const Attendance = require("../../models/Attendance");
 const EmployeeSalary = require("../../models/EmployeeSalary");
 const BranchSettings = require("../../models/BranchSettings");
 const EmployeeDocument = require("../../models/EmployeeDocument");
+
+
+
 
 const getLoggedInEmployee = async (userId) => {
     const user = await User.findById(userId);
@@ -652,9 +658,12 @@ exports.chekinEmployee = async (req, res) => {
         }
 
         const branchId = employee.branch_id;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
 
+        // const today = new Date();
+        // today.setHours(0, 0, 0, 0);
+
+        const today = moment().tz("Asia/Kolkata").startOf("day").toDate();
+    
         const siteCheckinEnabled = employee.siteCheckinEnabled;
 
 
@@ -699,13 +708,16 @@ exports.chekinEmployee = async (req, res) => {
                 .split(":")
                 .map(Number);
 
-            const now = new Date();
+            const now = moment().tz("Asia/Kolkata");
 
-            const startTime = new Date();
+            const startTime = moment()
+                .tz("Asia/Kolkata")
+                .hour(startHour)
+                .minute(startMinute)
+                .second(0)
+                .millisecond(0);
 
-            startTime.setHours(startHour, startMinute, 0, 0);
-
-            if (now < startTime) {
+            if (now.isBefore(startTime)) {
                 return res.status(400).json({
                     success: false,
                     message: `Check-in starts at ${formatTime(branchSettings.startTime)}`,

@@ -1,7 +1,9 @@
+const mongoose = require('mongoose');
+const moment = require("moment-timezone");
+
 const Feature = require("../../models/Feature");
 const Plan = require("../../models/Plan");
 const Permission = require("../../models/Permission");
-const mongoose = require('mongoose');
 
 const Company = require('../../models/Company');
 const Employee = require('../../models/Employee');
@@ -171,12 +173,15 @@ exports.getEmployeeData = async (req, res) => {
     try {
         const { id } = req.params;
 
+        const start = moment()
+            .tz("Asia/Kolkata")
+            .startOf("day")
+            .toDate();
 
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-
-        const end = new Date();
-        end.setHours(23, 59, 59, 999);
+        const end = moment()
+            .tz("Asia/Kolkata")
+            .endOf("day")
+            .toDate();
 
         const attendance = await Attendance.findOne({
             employeeId: id,
@@ -189,15 +194,15 @@ exports.getEmployeeData = async (req, res) => {
 
         const history = await Attendance.find({
             employeeId: id,
-        }).sort({createdAt: 1});
+        }).sort({ createdAt: 1 });
 
         return res.status(200).json({
             success: true,
             data: {
                 attendance,
                 history,
-                start, 
-                end                
+                start,
+                end,
             },
         })
 
