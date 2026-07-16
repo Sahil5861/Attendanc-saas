@@ -211,7 +211,7 @@ exports.getEmployeeData = async (req, res) => {
         console.error(error)
         return res.status(500).json({
             success: false,
-            maessahe: 'Server Error'
+            maessage: error.message
         });
     }
 }
