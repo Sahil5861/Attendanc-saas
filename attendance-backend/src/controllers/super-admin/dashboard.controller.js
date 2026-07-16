@@ -167,9 +167,6 @@ exports.getBranchsData = async (req, res) => {
     }
 };
 
-
-
-
 exports.getEmployeeData = async (req, res) => {
     try {
         const { id } = req.params;
@@ -184,11 +181,16 @@ exports.getEmployeeData = async (req, res) => {
             attendanceDate: today,
         })
 
+        const history = await Attendance.find({
+            employeeId: id,
+        }).sort({createdAt: 1});
 
         return res.status(200).json({
             success: true,
             data: {
-                attendance
+                attendance,
+                history,
+                today
             },
         })
 
