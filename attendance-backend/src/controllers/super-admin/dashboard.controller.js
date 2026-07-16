@@ -182,7 +182,7 @@ exports.getEmployeeData = async (req, res) => {
             .tz("Asia/Kolkata")
             .endOf("day")
             .toDate();
-
+            
         const attendance = await Attendance.findOne({
             employeeId: id,
             status: "present",
