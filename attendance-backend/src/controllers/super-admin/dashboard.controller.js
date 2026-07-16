@@ -196,7 +196,8 @@ exports.getEmployeeData = async (req, res) => {
             data: {
                 attendance,
                 history,
-                today
+                start, 
+                end                
             },
         })
 
