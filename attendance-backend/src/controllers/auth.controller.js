@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Company = require("../models/Company");
 const Employee = require("../models/Employee");
 const bcrypt = require("bcryptjs");
+const EmployeeHistory = require("../models/EmployeeHistory");
 
 const { generateToken } = require("../utils/jwt");
 const { getUserPermissions, getCurrentPlan } = require("../utils/helper");
@@ -79,23 +80,23 @@ exports.login = async (req, res) => {
 
         await user.save();
 
+        // Add employee login history
+        if (user.employeeId) {
+            await EmployeeHistory.create({
+                employeeId: user.employeeId,
+                entryType: "login",
+                time: new Date(),
+                remarks: "Employee logged in",
+                ipAddress: req.ip || req.headers["x-forwarded-for"] || null,
+                device: req.headers["user-agent"] || null,
+            });
+        }
+
         // return;
         const token = generateToken(user);
 
         const permissions = await getUserPermissions(user);
         const plan = await getCurrentPlan(user);
-
-
-        // res.cookie(
-        //     "accessToken",
-        //     token,
-        //     {
-        //         httpOnly: true,
-        //         secure: false,
-        //         sameSite: "lax",
-        //         maxAge: 7 * 24 * 60 * 60 * 1000
-        //     }
-        // )
 
         return res.status(200).json({
             success: true,
@@ -115,6 +116,35 @@ exports.login = async (req, res) => {
         });
     }
 };
+
+exports.logout = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        const user = await User.findById(id);
+
+        // Add employee login history
+        if (user.employeeId) {
+            await EmployeeHistory.create({
+                employeeId: user.employeeId,
+                entryType: "logout",
+                time: new Date(),
+                remarks: "Employee logged out",
+                ipAddress: req.ip || req.headers["x-forwarded-for"] || null,
+                device: req.headers["user-agent"] || null,
+            });
+        }
+
+        return res.status(200).json({
+            success: true, message: 'Logout successfully !'
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false, message: error.message
+        })
+    }
+}
 
 exports.me = async (req, res) => {
 
@@ -509,7 +539,7 @@ exports.resetPassword = async (req, res) => {
             })
         }
 
-        if (!confirmPassword) {            
+        if (!confirmPassword) {
             return res.status(400).json({
                 success: false, message: 'Confirm Passord is required'
             })
@@ -535,9 +565,9 @@ exports.resetPassword = async (req, res) => {
             })
         }
 
-        
-        const hashedPassword =await bcrypt.hash(password,10);
-        
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         user.realPassword = password;
         user.password = hashedPassword;
 
@@ -551,8 +581,40 @@ exports.resetPassword = async (req, res) => {
 
 
     catch (error) {
-            return res.status(500).json({
-                success: false, message: error.message
-            })
-        }
+        return res.status(500).json({
+            success: false, message: error.message
+        })
+    }
+}
+
+exports.saveToken = async (req, res) => {
+
+    try {
+        const { fcmToken } = req.body;
+
+
+        const userId = req.user.id;
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            {
+                fcmToken: fcmToken,
+            },
+            {
+                new: true,
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "FCM Token Saved Successfully",
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false, mesage: error.message, data: user
+        });
+    }
+
+
 }

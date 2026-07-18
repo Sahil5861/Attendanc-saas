@@ -27,8 +27,6 @@ router.get("/", async (req, res) => {
     });
 })
 
-
-
 router.post("/states", async (req, res) => {
     try {
         const data = await State.find({
@@ -106,5 +104,33 @@ router.post("/cities-by-state/:id", async (req, res) => {
 
 
 });
+
+
+// send notification api :
+
+const admin = require("../config/firebase");
+
+exports.sendNotification = async(req,res)=>{
+
+    const token=req.body.token;
+
+    const message={
+
+        notification:{
+            title:"Attendance",
+            body:"You have successfully checked in."
+        },
+
+        token:token
+
+    };
+
+    await admin.messaging().send(message);
+
+    res.json({
+        success:true
+    });
+
+}
 
 module.exports = router;

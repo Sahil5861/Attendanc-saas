@@ -171,7 +171,6 @@ exports.getLeave = async (req, res) => {
 
 exports.createLeave = async (req, res) => {
     try {
-        console.log('req : ', req.body);
 
         const { reason, daysType, type, fromDate, toDate, date, status, employeeId } = req.body;
 
@@ -261,15 +260,10 @@ exports.updateLeaveStatus = async (req, res) => {
             if (employee) {
                 const isApproved = status === "APPROVED";
 
-
-                // crete attendance for Leave
-
+                // create attendance for Leave
                 if (isApproved) {
-
                     if (leave.daysType === 'single') {
-
                         const attendanceDate = new Date(leave.date);
-
                         attendanceDate.setHours(0, 0, 0, 0);
 
                         const exist = await Attendance.findOne({
@@ -297,13 +291,11 @@ exports.updateLeaveStatus = async (req, res) => {
                         startDate.setHours(0, 0, 0, 0);
                         endDate.setHours(0, 0, 0, 0);
 
-
                         for (
                             let current = new Date(startDate);
                             current <= endDate;
                             current.setDate(current.getDate() + 1)
                         ) {
-
                             const attendanceDate = new Date(current);
 
                             const exists = await Attendance.findOne({
@@ -324,7 +316,31 @@ exports.updateLeaveStatus = async (req, res) => {
                         }
                     }
                 }
-               
+
+                // 👉 Notify the EMPLOYEE that their leave status was updated
+                await createNotification({
+                    companyId: employee.company_id,
+                    branchId: employee.branch_id,
+
+                    senderId: req.user?._id ?? employee.branch_id,
+                    senderType: req.user ? "User" : "Branch",
+
+                    receiverId: employee._id,
+                    receiverType: "Employee",
+
+                    type: status == 'APPROVED' ?  "LEAVE_APPROVED" : 'LEAVE_REJECTED',
+
+                    title: isApproved ? "Leave Approved" : "Leave Rejected",
+
+                    message: isApproved
+                        ? `Your ${leave.type} leave request has been approved.`
+                        : `Your ${leave.type} leave request has been rejected.`,
+
+                    referenceId: leave._id,
+                    referenceModel: "Leave",
+
+                    actionUrl: "/employee/leaves",
+                });
             }
         }
 
@@ -341,7 +357,6 @@ exports.updateLeaveStatus = async (req, res) => {
         });
     }
 }
-
 exports.deleteLeave = async (req, res) => {
     try {
         const { id } = req.params;

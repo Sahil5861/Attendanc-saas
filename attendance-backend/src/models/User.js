@@ -69,6 +69,11 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    fcmToken: {
+      type: String,
+      default: null
+    },
+
     lastLogin: {
       type: Date,
       default: null,

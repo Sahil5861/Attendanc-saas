@@ -85,4 +85,5 @@ temp/
 # User Uploads
 # ==========================
 attendance-backend/uploads/
+attendance-backend/src/config/serviceAccountKey.json
 mobile
