@@ -232,7 +232,7 @@ export default function CompanyTable({ branches, onCreate, onEdit, onView, onDel
                             type="info"
                             outline
                             permission="branch.view"
-                            title="Login As"
+                            title="View"
                             icon={<LogInIcon size={13}/>}
                             onClick={()=> onView  ?.(company)}
                           />
