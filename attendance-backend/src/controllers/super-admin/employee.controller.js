@@ -15,6 +15,9 @@ const BranchSettings = require("../../models/BranchSettings");
 const EmployeeDocument = require("../../models/EmployeeDocument");
 
 
+const fs = require('fs');
+const path = require('path');
+
 
 
 const getLoggedInEmployee = async (userId) => {
@@ -185,6 +188,56 @@ exports.updateProfile = async (req, res) => {
         });
     }
 };
+
+
+exports.updateProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No image file uploaded",
+      });
+    }
+
+    const { user, employee } = await getLoggedInEmployee(req.user.id);
+
+    if (!user || !employee) {
+      // uploaded file cleanup karo agar employee nahi mila
+      fs.unlink(req.file.path, () => {});
+      return res.status(404).json({
+        success: false,
+        message: "Employee profile not found",
+      });
+    }
+
+    // purani image delete karo (agar exist karti hai)
+    if (employee.image) {
+      const oldImagePath = path.join(__dirname, "..", "uploads", "employees", employee.image);
+      fs.unlink(oldImagePath, (err) => {
+        if (err) console.log("Old image delete skip (not found or already removed)");
+      });
+    }
+
+    employee.image = req.file.filename;
+    await employee.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile image updated successfully",
+      data: {
+        image: employee.image,
+      },
+    });
+  } catch (error) {
+    console.error("updateProfileImage error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
 
 exports.changeProfilePassword = async (req, res) => {
     try {
@@ -1224,6 +1277,46 @@ exports.deleteDocs = async (req, res) => {
     catch (error) {
         return res.status(500).json({
             success: fasle, message: error.message
+        });
+    }
+}
+
+
+
+// notifications
+
+exports.updateNotifications = async(req, res) =>{
+    try{
+
+        const {id} = req.body;
+
+        const myUser = await User.findById(id);
+
+        if (!myUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+
+        const user = await User.findByIdAndUpdate(id, {
+            notificationStatus : !myUser.notificationStatus
+        }, {
+            new: true
+        });
+
+
+        const status = myUser.notificationStatus == false ? 'enabled' : 'disabled';
+
+
+        return res.status(200).json({
+            success: true, message: `Notifications ${status} successfully !`
+        });
+    }
+    catch(error){
+        return res.status(500).json({
+            success: false, message: error.message
         });
     }
 }

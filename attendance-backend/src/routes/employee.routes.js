@@ -38,6 +38,9 @@ router.get('/profile', employeeController.getProfile);
 router.put('/profile', upload.single("image"), employeeController.updateProfile);
 router.put('/profile/password', employeeController.changeProfilePassword);
 
+
+router.put('/profile-image', upload.single("image"), employeeController.updateProfileImage)
+
 router.post('/checkin/:id', employeeController.chekinEmployee);
 router.post('/checkOut/:id', employeeController.chekoutEmployee);
 
@@ -53,11 +56,13 @@ router.post('/leaves', leaveController.createLeave)
 router.delete('/leaves/:id', leaveController.deleteLeave)
 
 // docs
-// docs
 router.get('/docs/:id' ,employeeController.getDocs);
 router.post('/docs', upload_docs.single("file") ,employeeController.createDocs);
 router.delete('/docs/:id' ,employeeController.deleteDocs);
 
+// notifications
+
+router.post('/notification-update', employeeController.updateNotifications);
 
 
 module.exports = router;

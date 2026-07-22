@@ -42,8 +42,7 @@ exports.getNotifications = async (req, res) => {
         const query = await getNotificationQuery(req);
 
         const notifications = await Notification.find({
-            ...query,
-            isRead: false,
+            ...query,            
         })
             .sort({ createdAt: -1 })
             .limit(20);

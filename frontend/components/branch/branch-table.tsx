@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import CompanyHeader from "./branch-header";
 import DangerButton from "../common/DangerButton";
-import { Edit2, Eye, Trash, Trash2 } from "lucide-react";
+import { Edit2, Eye, LogInIcon, Trash, Trash2 } from "lucide-react";
 import SecondaryButton from "../common/SecondaryButton";
 import PrimaryButton from "../common/PrimaryButton";
 import Button from "../common/Button";
@@ -217,16 +217,7 @@ export default function CompanyTable({ branches, onCreate, onEdit, onView, onDel
                             icon={<Edit2 size={13}/>}
                             permission="branch.edit"
                             onClick={()=> onEdit?.(company)}
-                          />   
-
-                          <Button
-                            type="info"
-                            outline
-                            permission="branch.view"
-                            title="View"
-                            icon={<Eye size={13}/>}
-                            onClick={()=> onView  ?.(company)}
-                          />
+                          />                             
 
                           <Button
                             type="danger"
@@ -235,6 +226,15 @@ export default function CompanyTable({ branches, onCreate, onEdit, onView, onDel
                             outline
                             permission="branch.delete"
                             onClick={()=> onDelete?.(company)}
+                          />
+
+                          <Button
+                            type="info"
+                            outline
+                            permission="branch.view"
+                            title="Login As"
+                            icon={<LogInIcon size={13}/>}
+                            onClick={()=> onView  ?.(company)}
                           />
                       </div>
                     </td>

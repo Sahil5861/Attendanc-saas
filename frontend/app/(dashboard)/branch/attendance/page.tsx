@@ -16,13 +16,15 @@ import { getEmployees, updateAttendance } from "@/services/branch.service";
 import Modal from "@/components/attendance/modal";
 import toast from "react-hot-toast";
 import { loadBranchDashboardData } from "@/services/super-admin.service";
+import { Holiday } from "@/components/interface";
 
 // ── Status config — single source of truth for colors/labels ──────────
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string; dot: string; value: string }> = {
   "P": { label: "Present", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500", value: 'present' },
   "A": { label: "Absent", bg: "bg-red-50", text: "text-red-600", border: "border-red-200", dot: "bg-red-500", value: 'absent' },
   "L": { label: "Leave", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500", value: 'onLeave' },
-  "H": { label: "Holiday", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500", value: 'holiday' },
+  "W": { label: "Weekend", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500", value: 'weekend' },
+  "H": { label: "Holiday", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", dot: "bg-purple-500", value: 'holiday' },
   "-": { label: "No record", bg: "bg-slate-50", text: "text-slate-300", border: "border-slate-100", dot: "bg-slate-300", value: '-' },
   "NA": { label: "No record", bg: "bg-slate-50", text: "text-slate-300", border: "border-slate-100", dot: "bg-slate-300", value: '-' },
 };
@@ -69,6 +71,7 @@ export default function AttendancePage() {
   const today = new Date();
   const [currentYear, setcurrentYear] = useState(today.getFullYear());
   const [currentMonth, setcurrentMonth] = useState(today.getMonth());
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
@@ -78,11 +81,15 @@ export default function AttendancePage() {
     month: "long", year: "numeric"
   });
 
-  const reset = async() => {
+  const reset = async () => {
     setcurrentMonth(today.getMonth())
     setcurrentYear(today.getFullYear())
 
-    await fetchEmployees();
+
+    await Promise.all([
+      fetchEmployees(),
+      loadDashboardData()
+    ])
   }
 
   // Fixed: this previously copied the goNextMonth wrap-around logic (checked
@@ -109,6 +116,44 @@ export default function AttendancePage() {
     }
   }
 
+
+  const getActiveBranchId = () => {
+    const branchstr = localStorage.getItem('activeBranch') || null;
+    if (!branchstr) return null;
+    try {
+      return JSON.parse(branchstr)?._id || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getHolidayForDate = (date: Date): Holiday | undefined => {
+    const branchId = getActiveBranchId();
+
+    return holidays.find((h) => {
+      if (h.status !== "active") return false;
+
+      // Branch eligibility check
+      const branchMatches =
+        h.appliesToAllBranches || (branchId ? h.branchIds.includes(branchId) : false);
+      if (!branchMatches) return false;
+
+      const hDate = new Date(h.date);
+
+      if (h.isRecurring) {
+        // Recurring: match month + day only, ignore year
+        return hDate.getMonth() === date.getMonth() && hDate.getDate() === date.getDate();
+      }
+
+      // One-time: match exact day
+      return (
+        hDate.getFullYear() === date.getFullYear() &&
+        hDate.getMonth() === date.getMonth() &&
+        hDate.getDate() === date.getDate()
+      );
+    });
+  };
+
   const buildDateForDay = (day: number) => {
     return new Date(currentYear, currentMonth, day);
   }
@@ -131,18 +176,21 @@ export default function AttendancePage() {
     setLoading(false);
   }
 
-  useEffect(() => {
+  const loadDashboardData = async () => {
+
     const branchstr = localStorage.getItem('activeBranch') || null;
     if (!branchstr) return;
 
     const branch = JSON.parse(branchstr);
     const branchId = branch?._id;
     if (!branchId) return;
-    const loadData = async () => {
-      const res = await loadBranchDashboardData(branchId)
-      setData(res.data.data);
-    }
-    loadData();
+    const res = await loadBranchDashboardData(branchId)
+    setData(res.data.data);
+    setHolidays(res.data.data.holidays || []); // NEW
+  }
+
+  useEffect(() => {
+    loadDashboardData();
   }, [])
 
   const formattedTime = (dateString?: string) => {
@@ -169,9 +217,7 @@ export default function AttendancePage() {
   }
 
   useEffect(() => {
-    setLoading(true);
     fetchEmployees()
-    setLoading(false);
   }, [])
 
   const openAttendance = (
@@ -180,40 +226,25 @@ export default function AttendancePage() {
     day: number,
     date: Date,
     status: string,
-    record: EmployeeAttendanceRecord | undefined
+    record: EmployeeAttendanceRecord | undefined,
+    holiday?: Holiday // NEW
   ) => {
     const isoDate = date.toISOString();
 
-    if (record) {
-      setSelectedAttendance({
-        id: record._id || '',
-        employeeId: employeeId,
-        employeeName,
-        day,
-        date: isoDate,
-        month: date.getMonth(),
-        year: date.getFullYear(),
-        status,
-        checkIn: record.checkin || '',
-        checkOut: record.checkout || '',
-        workingHours: record.workingHours || '',
-      });
-    }
-    else {
-      setSelectedAttendance({
-        id: '',
-        employeeId: employeeId,
-        employeeName,
-        day,
-        date: isoDate,
-        month: date.getMonth(),
-        year: date.getFullYear(),
-        status,
-        checkIn: '',
-        checkOut: '',
-        workingHours: '',
-      });
-    }
+    setSelectedAttendance({
+      id: record?._id || '',
+      employeeId,
+      employeeName,
+      day,
+      date: isoDate,
+      month: date.getMonth(),
+      year: date.getFullYear(),
+      status,
+      checkIn: record?.checkin || '',
+      checkOut: record?.checkout || '',
+      workingHours: record?.workingHours || '',
+      holiday: holiday || null, // NEW
+    });
   };
 
   const handleClose = () => {
@@ -236,7 +267,7 @@ export default function AttendancePage() {
     setOpen(true);
 
     console.log('selectedAttendance : ', selectedAttendance);
-    
+
     setForm({
       id: selectedAttendance.id,
       checkIn: formatTimeForInput(selectedAttendance?.checkIn),
@@ -451,7 +482,7 @@ export default function AttendancePage() {
                 onClick={reset}
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white transition hover:border-emerald-200 hover:text-emerald-600"
               >
-                <RotateCcw size={16}/>
+                <RotateCcw size={16} />
               </button>
 
               {/* Navigation */}
@@ -547,12 +578,18 @@ export default function AttendancePage() {
                             )
                           })
 
+                          const holidayForDay = getHolidayForDate(cellDate); // NEW
+
                           let label = isWeekend ? 'H' : '-';
 
                           const status = attendanceRecord?.status || '-';
 
                           if (!beforeJoining) {
-                            label = status == 'present' ? 'P' : status == 'absent' ? 'A' : status == 'onLeave' ? 'L' : isWeekend ? 'H' : '-';
+                            if (holidayForDay) {
+                              label = 'H'; // company holiday takes priority over attendance status/weekend
+                            } else {
+                              label = status == 'present' ? 'P' : status == 'absent' ? 'A' : status == 'onLeave' ? 'L' : isWeekend ? 'W' : '-';
+                            }
                           }
                           const cfg = STATUS_CONFIG[label] ?? STATUS_CONFIG["-"];
                           const hasRecord = !beforeJoining;
@@ -562,6 +599,7 @@ export default function AttendancePage() {
                               <button
                                 onClick={() => openAttendance(employee._id, employee?.name, date, buildDateForDay(date), label, attendanceRecord)}
                                 disabled={!hasRecord}
+                                title={holidayForDay ? holidayForDay.title : undefined}
                                 className={`
                               w-8 h-8 rounded-lg text-xs font-bold border
                               flex items-center justify-center mx-auto
@@ -671,17 +709,26 @@ export default function AttendancePage() {
                   })()}
                 </div>
 
-                {/* Time details */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white border border-slate-100 rounded-xl p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">Check In</p>
-                    <p className="text-base font-bold text-slate-800">{formattedTime(selectedAttendance.checkIn)?.toUpperCase()}</p>
+                {selectedAttendance.holiday ? (
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-blue-400 mb-1.5">Holiday</p>
+                    <p className="text-base font-bold text-blue-700">{selectedAttendance.holiday.title}</p>
+                    {selectedAttendance.holiday.description && (
+                      <p className="text-xs text-slate-500 mt-1">{selectedAttendance.holiday.description}</p>
+                    )}
                   </div>
-                  <div className="bg-white border border-slate-100 rounded-xl p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">Check Out</p>
-                    <p className="text-base font-bold text-slate-800">{formattedTime(selectedAttendance.checkOut)?.toUpperCase()}</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white border border-slate-100 rounded-xl p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">Check In</p>
+                      <p className="text-base font-bold text-slate-800">{formattedTime(selectedAttendance.checkIn)?.toUpperCase()}</p>
+                    </div>
+                    <div className="bg-white border border-slate-100 rounded-xl p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">Check Out</p>
+                      <p className="text-base font-bold text-slate-800">{formattedTime(selectedAttendance.checkOut)?.toUpperCase()}</p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Working hours */}
                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex items-center justify-between">

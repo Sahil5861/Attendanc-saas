@@ -17,6 +17,10 @@ router.post("/verify-payment", paymentController.verifyPayment);
 
 
 router.post("/create-order-for-plan", paymentController.createOrderForPlan);
+router.post("/create-subscription-for-plan", paymentController.createSubscription);
+
+router.post("/verify-subscription", paymentController.verifySubscriptionPayment );
+
 
 
 module.exports = router;

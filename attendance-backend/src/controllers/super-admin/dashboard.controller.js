@@ -11,6 +11,8 @@ const Branch = require("../../models/Branch");
 const Role = require("../../models/Role");
 const BranchPlanRelation = require("../../models/BranchPlanRelation");
 const Attendance = require("../../models/Attendance");
+const BranchSubscription = require('../../models/BranchSubscription');
+const Holiday = require('../../models/Holiday');
 
 
 exports.getSuperAdminData = async (req, res) => {
@@ -57,9 +59,9 @@ exports.getCompanyData = async (req, res) => {
 
         const branchesWithPlans = await Promise.all(
             branches.map(async (branch) => {
-                const realation = await BranchPlanRelation.findOne({
+                const realation = await BranchSubscription.findOne({
                     branch_id: branch._id,
-                    status: 'active'
+                    status: 'created'
                 }).populate({
                     path: 'plan_id',
                     populate: {
@@ -106,6 +108,84 @@ exports.getCompanyData = async (req, res) => {
     }
 };
 
+
+
+// exports.getBranchsData = async (req, res) => {
+//     try {
+//         const { id: branchId } = req.params;
+
+//         const employees = await Employee.find({
+//             branch_id: branchId,
+//         }).sort({ createdAt: -1 });
+
+//         // Today's start & end
+//         // const startOfDay = new Date();
+//         // startOfDay.setHours(0, 0, 0, 0);
+
+//         // const endOfDay = new Date();
+//         // endOfDay.setHours(23, 59, 59, 999);
+
+
+//         const startOfDay = moment()
+//             .tz("Asia/Kolkata")
+//             .startOf("day")
+//             .toDate();
+
+//         const endOfDay = moment()
+//             .tz("Asia/Kolkata")
+//             .endOf("day")
+//             .toDate();
+
+//         const attendanceStats = await Attendance.aggregate([
+//             {
+//                 $match: {
+//                     branchId: new mongoose.Types.ObjectId(branchId),
+//                     // branchId: branchId,
+//                     attendanceDate: {
+//                         $gte: startOfDay,
+//                         $lte: endOfDay,
+//                     },
+//                 },
+//             },
+//             {
+//                 $group: {
+//                     _id: "$status",
+//                     total: { $sum: 1 },
+//                 },
+//             },
+//         ]);
+
+//         const stats = {
+//             todayPresent: 0,
+//             todayAbsent: 0,
+//             todayOnLeave: 0,
+//         };
+
+//         attendanceStats.forEach((item) => {
+//             if (item._id === "present") stats.todayPresent = item.total;
+//             if (item._id === "absent") stats.todayAbsent = item.total;
+//             if (item._id === "onLeave") stats.todayOnLeave = item.total;
+//         });
+
+//         return res.status(200).json({
+//             success: true,
+//             data: {
+//                 employees,
+//                 ...stats,
+//                 startOfDay,
+//                 endOfDay
+//             },
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({
+//             success: false,
+//         });
+//     }
+// };
+
+
+
 exports.getBranchsData = async (req, res) => {
     try {
         const { id: branchId } = req.params;
@@ -114,51 +194,85 @@ exports.getBranchsData = async (req, res) => {
             branch_id: branchId,
         }).sort({ createdAt: -1 });
 
-        // Today's start & end
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        const startOfDay = moment()
+            .tz("Asia/Kolkata")
+            .startOf("day")
+            .toDate();
 
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
+        const endOfDay = moment()
+            .tz("Asia/Kolkata")
+            .endOf("day")
+            .toDate();
 
-        const attendanceStats = await Attendance.aggregate([
-            {
-                $match: {
-                    branchId: new mongoose.Types.ObjectId(branchId),
-                    // branchId: branchId,
-                    attendanceDate: {
-                        $gte: startOfDay,
-                        $lte: endOfDay,
-                    },
-                },
+        const todayAttendance = await Attendance.find({
+            branchId: new mongoose.Types.ObjectId(branchId),
+            attendanceDate: {
+                $gte: startOfDay,
+                $lte: endOfDay,
             },
-            {
-                $group: {
-                    _id: "$status",
-                    total: { $sum: 1 },
-                },
-            },
-        ]);
-
-        const stats = {
-            todayPresent: 0,
-            todayAbsent: 0,
-            todayOnLeave: 0,
-        };
-
-        attendanceStats.forEach((item) => {
-            if (item._id === "present") stats.todayPresent = item.total;
-            if (item._id === "absent") stats.todayAbsent = item.total;
-            if (item._id === "onLeave") stats.todayOnLeave = item.total;
         });
+
+        let todayPresent = 0;
+        let todayAbsent = 0;
+        let todayOnLeave = 0;
+
+        todayAttendance.forEach((record) => {
+            if (record.status === "present") {
+                todayPresent++;
+            } else if (record.status === "absent") {
+                todayAbsent++;
+            } else if (record.status === "onLeave") {
+                todayOnLeave++;
+            }
+        });
+
+        // Employees jinki aaj attendance hi nahi bani
+        const noAttendanceCount =
+            employees.length - todayAttendance.length;
+
+        // Unko bhi absent count karo
+        todayAbsent += noAttendanceCount;
+
+
+        // holidays
+        const branch = await Branch.findById(branchId);
+
+        if(!branch){
+            return res.status(400).json({
+                success: false, message: 'Branch Not found !',
+            });
+        }
+
+        const company = await Company.findById(branch.companyId);
+
+        if(!company){
+            return res.status(400).json({
+                success: false, message: 'Company Not found !',
+            });
+        }
+
+
+        const branchHolidays = await Holiday.find({
+            companyId: company._id,
+            status: "active",
+            $or: [
+                { appliesToAllBranches: true },
+                { appliesToAllBranches: false, branchIds: branchId },
+            ],
+        }).sort({ date: 1 });
+
+
 
         return res.status(200).json({
             success: true,
             data: {
                 employees,
-                ...stats,
+                todayPresent,
+                todayAbsent,
+                todayOnLeave,
                 startOfDay,
-                endOfDay
+                endOfDay,
+                holidays: branchHolidays
             },
         });
     } catch (error) {
@@ -168,6 +282,8 @@ exports.getBranchsData = async (req, res) => {
         });
     }
 };
+
+
 
 exports.getEmployeeData = async (req, res) => {
     try {

@@ -13,6 +13,8 @@ import {
   CreditCard,
   Settings,
   FileText,
+  BriefcaseBusiness,
+  Wallet2
 } from "lucide-react";
 
 export const sidebarItems = {
@@ -40,6 +42,12 @@ export const sidebarItems = {
           href: "/super-admin/plans",
           permission: "plan.view",
           icon: ShieldCheck,
+        },
+        {
+          title: "Subscription",
+          href: "/super-admin/subscriptions",
+          permission: "plan.view",
+          icon: Wallet2,
         },
       ],
     },
@@ -74,27 +82,24 @@ export const sidebarItems = {
 
     {
       title: "Organization",
-      icon: Building,
+      icon: Building2,
       children: [
         {
           title: "Branches",
           href: "/company/branches",
-          icon: Building,
+          icon: Building2,
         },
       ],
     },
-
     {
-      title: "Access Control",
-      icon: Users,
-      children: [
-        {
-          title: "Roles",
-          href: "/company/roles",
-          permission: "role.view",
-          icon: Users,
-        },
-      ],
+      title: "Holidays",
+      href: "/company/holidays",
+      icon: BriefcaseBusiness,
+    },
+    {
+      title: "Settings",
+      href: "/company/settings",
+      icon: Settings,
     },
   ],
 

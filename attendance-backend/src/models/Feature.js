@@ -32,13 +32,7 @@ const featureSchema = new mongoose.Schema(
         default:true,        
     },
 
-    monthlyPrice:{
-        type:Number,
-        required:true,
-        default:0
-    },
-
-    yearlyPrice:{
+    price:{
         type:Number,
         required:true,
         default:0

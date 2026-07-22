@@ -17,6 +17,9 @@ const permissionController = require("../controllers/super-admin/permission.cont
 const featureController = require("../controllers/super-admin/feature.controller");
 const planController = require("../controllers/super-admin/plan.controller");
 
+
+const holidayController = require("../controllers/super-admin/holidayController");
+
 router.use(auth);
 
 router.use(
@@ -73,4 +76,11 @@ router.delete("/features/:id", featureController.deleteFeature);
 
 router.get("/permissions", permissionController.getAllPermissions);
 router.post("/permissions", permissionController.createPermissions);
+
+
+// holidays
+router.get('/holidays', holidayController.getHolidays);
+router.post('/holidays', holidayController.createHoliday);
+router.put('/holidays/:id', holidayController.updateHoliday);
+router.delete('/holidays/:id', holidayController.deleteHoliday);
 module.exports = router;

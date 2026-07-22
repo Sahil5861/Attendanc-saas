@@ -20,6 +20,8 @@ const permissionController = require("../controllers/super-admin/permission.cont
 const featureController = require("../controllers/super-admin/feature.controller");
 const planController = require("../controllers/super-admin/plan.controller");
 
+const subscriptionController = require("../controllers/super-admin/subscriptionController");
+
 router.use(auth);
 
 router.use(
@@ -129,4 +131,9 @@ router.delete("/features/:id", featureController.deleteFeature);
 
 router.get("/permissions", permissionController.getAllPermissions);
 router.post("/permissions", permissionController.createPermissions);
+
+
+// subscriptions
+
+router.get("/subscriptions", subscriptionController.getSubscriptions);
 module.exports = router;

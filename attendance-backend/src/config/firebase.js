@@ -1,10 +1,9 @@
 const { initializeApp, cert } = require("firebase-admin/app");
-const admin = require("firebase-admin");
-
+const { getMessaging } = require("firebase-admin/messaging");
 const serviceAccount = require("./serviceAccountKey.json");
 
-initializeApp({
+const app = initializeApp({
   credential: cert(serviceAccount),
 });
 
-module.exports = admin;
+module.exports = { app, messaging: getMessaging(app) };

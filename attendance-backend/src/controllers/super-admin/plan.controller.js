@@ -1,6 +1,6 @@
 const Plan = require("../../models/Plan");
-
 const Feature = require("../../models/Feature");
+const { createRazorpayPlans } = require("../../services/razorpay.service");
 
 exports.getPlans = async(req,res)=>{
 
@@ -23,9 +23,23 @@ exports.getPlans = async(req,res)=>{
     }
 };
 
-exports.createPlan = async(req,res)=>{
+const getPlanPrices = (features = []) => {
 
-    try{
+    const monthlyPrice = features.reduce((total, feature) => {
+        return total + Number(feature.price || 0);
+    }, 0);
+
+    return {
+        monthlyPrice,
+        quarterlyPrice: monthlyPrice * 3,
+        halfYearlyPrice: monthlyPrice * 6,
+        yearlyPrice: monthlyPrice * 12
+    };
+};
+
+exports.createPlan = async (req, res) => {
+
+    try {
 
         const {
             name,
@@ -34,56 +48,81 @@ exports.createPlan = async(req,res)=>{
             isCustom,
             status,
             company_id,
-            monthlyPrice,
-            yearlyPrice,
             branch_id
         } = req.body;
 
-        const formattedFeature = features.map(
-            (feature) => ({
-                feature_id: feature.feature_id,
-                type: feature.type,
-                limit: feature.limit || ""
-            })
-        );
-    
+        const formattedFeature = features.map((feature) => ({
+            feature_id: feature.feature_id,
+            type: feature.type,
+            limit: feature.limit || "",
+            price: Number(feature.price || 0)
+        }));
+
+        const prices = getPlanPrices(formattedFeature);
+
+        
 
         const plan = await Plan.create({
 
             name,
             description,
+
             features: formattedFeature,
-            isCustom: isCustom,
-            company_id: company_id,
-            branch_id: branch_id,
-            status: status,
-            monthlyPrice,
-            yearlyPrice
+
+            isCustom,
+
+            company_id,
+
+            branch_id,
+
+            status,
+
+            monthlyPrice: prices.monthlyPrice,
+
+            quarterlyPrice: prices.quarterlyPrice,
+
+            halfYearlyPrice: prices.halfYearlyPrice,
+
+            yearlyPrice: prices.yearlyPrice,
+
+            isCreated: false
+
         });
 
-        if(plan){
-            return res.status(201)
-            .json({
-                success:true,
-                data:plan
-            });
-        }
-        else{
-            return res(400).json({
-                success: false,
-                message: 'Something went wrong'
-            });
-        }
-
-
-    }
-    catch(error){
-
-        return res.status(500)
-        .json({
-            success:false            
+        // Create Razorpay Plans
+        const razorpayPlans = await createRazorpayPlans({
+            name,
+            prices
         });
+
+                // Check if all Razorpay plans are created successfully
+        if (
+            razorpayPlans &&
+            razorpayPlans.monthly &&
+            razorpayPlans.quarterly &&
+            razorpayPlans.halfYearly &&
+            razorpayPlans.yearly
+        ) {
+            plan.razorpayPlans = razorpayPlans;
+            plan.isCreated = true;
+
+            await plan.save();
+        }
+
+        return res.status(201).json({
+            success: true,
+            data: plan
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
     }
+
 };
 
 

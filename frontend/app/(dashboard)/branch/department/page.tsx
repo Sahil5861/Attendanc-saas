@@ -16,6 +16,7 @@ import { RootState } from "@/store";
 import { usePermission } from "@/hooks/usePermission";
 import Modal from "@/components/department/modal";
 import { updateDepartments, createDepartments, getDepartments, deleteDepartments } from "@/services/branch.service";
+import { Building2, LucideBriefcaseBusiness } from "lucide-react";
 
 interface Departments {
     _id: string;
@@ -195,6 +196,7 @@ export default function EmployeePage() {
                         title="No Departments Found"                                        
                         buttonText="Add"
                         onCreate={handleCreate}
+                        icon={<Building2 className="h-full w-full"/>}
                     />
                 ) : (
                     <Table

@@ -16,6 +16,7 @@ import { RootState } from "@/store";
 import { usePermission } from "@/hooks/usePermission";
 import Modal from "@/components/designation/modal";
 import { updateemployee, createemployee, getEmployees, deleteEmployee, updateDesignations, createDesignations, getDesignations, deleteDesignations } from "@/services/branch.service";
+import { BriefcaseBusiness } from "lucide-react";
 
 interface Designation {
     _id: string;
@@ -195,13 +196,14 @@ export default function EmployeePage() {
                         title="No Designations Found"                                        
                         buttonText="Add"
                         onCreate={handleCreate}
+                        icon={<BriefcaseBusiness className="h-full w-full"/>}
                     />
                 ) : (
                     <Table
                         designation={designation}
                         onCreate={handleCreate}
                         onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        onDelete={handleDelete}                        
                     />
                 )
             }

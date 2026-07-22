@@ -248,6 +248,9 @@ exports.updateLeaveStatus = async (req, res) => {
             });
         }
 
+        console.log('status', status); 
+        console.log('employeeId : ', leave.employeeId);
+
         const updatedLeave = await Leave.findByIdAndUpdate(
             id,
             { status },
@@ -259,6 +262,10 @@ exports.updateLeaveStatus = async (req, res) => {
 
             if (employee) {
                 const isApproved = status === "APPROVED";
+
+
+                console.log('isapproved : ', isApproved);
+
 
                 // create attendance for Leave
                 if (isApproved) {

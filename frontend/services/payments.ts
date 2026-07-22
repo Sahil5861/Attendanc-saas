@@ -6,3 +6,5 @@ export const verifyPayment = (data:object) => api.post('/payments/verify-payment
 
 
 export const createOrderForPlan = (data:object) => api.post(`/payments/create-order-for-plan`, data);
+
+export const createSubscriptionForPlan = (data:object) => api.post(`/payments/create-subscription-for-plan`, data);

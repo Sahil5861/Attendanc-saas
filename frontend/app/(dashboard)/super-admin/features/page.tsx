@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import EmptyState from "@/components/feature/empty-state";
+import EmptyState from "@/components/common/EmptyState";
 import Table from "@/components/feature/feature-table";
 import FeatureModal from "@/components/feature/feature-modal";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
@@ -14,8 +14,7 @@ const defaultForm = {
   description: "",
   type: "",
   value: "",
-  monthlyPrice: "",
-  yearlyPrice: "",
+  price: "",
   status: true
 };
 
@@ -57,8 +56,7 @@ export default function FeaturesPage() {
       description:   feature.description || "",
       type: feature.type || "",
       value : feature.value || '',
-      monthlyPrice:  feature.monthlyPrice  ?? 0,
-      yearlyPrice:   feature.yearlyPrice   ?? 0,
+      price:  feature.price  ?? 0,
       status:        feature.status        ?? true,
     });
     setOpen(true);
@@ -106,7 +104,12 @@ export default function FeaturesPage() {
   return (
     <>
       {features.length === 0 && !loading ? (
-        <EmptyState onCreate={handleCreate} />
+        <EmptyState
+          title="No Features Added yet"
+          subTitle="Create First Feature for your plans"
+          onCreate={handleCreate}
+          buttonText="Add"          
+        />
       ) : (
         <Table
           features={features}

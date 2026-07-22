@@ -590,10 +590,10 @@ exports.resetPassword = async (req, res) => {
 exports.saveToken = async (req, res) => {
 
     try {
-        const { fcmToken } = req.body;
+        const { fcmToken, id } = req.body;
 
 
-        const userId = req.user.id;
+        const userId = id;
 
         const user = await User.findByIdAndUpdate(
             userId,
@@ -612,7 +612,7 @@ exports.saveToken = async (req, res) => {
     }
     catch (error) {
         return res.status(500).json({
-            success: false, mesage: error.message, data: user
+            success: false, mesage: error.message
         });
     }
 

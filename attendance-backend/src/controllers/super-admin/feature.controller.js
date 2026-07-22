@@ -18,10 +18,9 @@ exports.createFeature = async(req,res)=>{
         name,
         slug,
         description,
-        monthlyPrice,
+        price,
         type,
         value,
-        yearlyPrice
     } = req.body;
 
     const exists =
@@ -47,8 +46,7 @@ exports.createFeature = async(req,res)=>{
         description,
         type,
         value : type == "module" ? true : value,
-        monthlyPrice,
-        yearlyPrice
+        price,
     });
 
     return res.status(201)
@@ -67,8 +65,7 @@ exports.updateFeature = async (req, res) => {
       name,
       slug,
       description,
-      monthlyPrice,
-      yearlyPrice,
+      price,
       type,
       value,
       status
@@ -101,8 +98,7 @@ exports.updateFeature = async (req, res) => {
     feature.description = description;
     feature.type = type;
     feature.value = type == "module" ? true : value,
-    feature.monthlyPrice = monthlyPrice;
-    feature.yearlyPrice = yearlyPrice;
+    feature.price = price;
     feature.status = status;
 
     await feature.save();
@@ -162,13 +158,8 @@ exports.deleteFeature = async (req, res) => {
         (f) => f._id.toString() !== id
       );
 
-      plan.monthlyPrice = plan.features.reduce(
-        (sum, f) => sum + (f.monthlyPrice || 0),
-        0
-      );
-
-      plan.yearlyPrice = plan.features.reduce(
-        (sum, f) => sum + (f.yearlyPrice || 0),
+      plan.price = plan.features.reduce(
+        (sum, f) => sum + (f.price || 0),
         0
       );
 

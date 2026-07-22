@@ -22,10 +22,17 @@ router.use(
 const {
     saveBranchSettings,
     getBranchSettings,
+
+    saveCompanySettings,
+    getCompanySettings,
 } = require("../controllers/super-admin/settings.controller");
 
 router.put("/branch", saveBranchSettings);
-
 router.get("/branch", getBranchSettings);
+
+
+
+router.put("/company", saveCompanySettings);
+router.get("/company", getCompanySettings);
 
 module.exports = router;

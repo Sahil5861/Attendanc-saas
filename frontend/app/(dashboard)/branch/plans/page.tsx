@@ -6,17 +6,14 @@ import toast from "react-hot-toast";
 import {
     getPlans,
     getBranchActivePlan,
-    assignPlanToBranch,
 } from "@/services/branch.service";
+import { useDispatch } from "react-redux";
+import { createOrderForPlan, createSubscriptionForPlan } from "@/services/payments";
 
 import Cookies from "js-cookie";
 import PrimaryButton from "@/components/common/PrimaryButton";
 import SecondaryButton from "@/components/common/SecondaryButton";
-import { useSelector, useDispatch  } from "react-redux";
 import { setActiveBranch, clearActiveBranch } from "@/store/slices/branchSlice";
-import { RootState } from "@/store";
-import { Cookie } from "next/font/google";
-import { createOrder, createOrderForPlan } from "@/services/payments";
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface Feature {
@@ -30,6 +27,8 @@ interface Plan {
     name: string;
     description: string;
     monthlyPrice: number;
+    quarterlyPrice: string;
+    halfYearlyPrice: string;
     yearlyPrice: number;
     isCustom: boolean;
     status: boolean;
@@ -41,8 +40,8 @@ interface BranchPlanRelation {
     _id: string;
     branch_id: string;
     plan_id: string;
-    status: "active" | "expired";
-    billingCycle: "monthly" | "yearly";
+    status: "created" | "expired";
+    billingCycle: "monthly" | "quarterly" | "halfYearly" | "yearly";
     createdAt?: string;
 }
 
@@ -55,8 +54,8 @@ export default function BranchPlansPage() {
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPlan, setCurrentPlan] = useState<BranchPlanRelation | null>(null);
-    const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
-    
+    const [billingCycle, setBillingCycle] = useState<"monthly" | "quarterly" | "halfYearly" | "yearly">("monthly");
+
     const dispatch = useDispatch();
 
     // Confirmation modal state
@@ -65,6 +64,20 @@ export default function BranchPlansPage() {
 
 
     const branchId: string = Cookies.get("active_branch_id") || "";
+
+    const confirmPriceMap = {
+        monthly: confirmPlan?.monthlyPrice,
+        quarterly: confirmPlan?.quarterlyPrice,
+        halfYearly: confirmPlan?.halfYearlyPrice,
+        yearly: confirmPlan?.yearlyPrice,
+    };
+
+    const billingShortLabel = {
+        monthly: "mo",
+        quarterly: "3 mo",
+        halfYearly: "6 mo",
+        yearly: "yr",
+    };
 
     // ── Load plans + current active plan ──────────────────────────────────
     const loadData = async () => {
@@ -80,6 +93,10 @@ export default function BranchPlansPage() {
 
             setPlans((plansRes.data.data || []).filter((p: Plan) => p.status !== false));
             setCurrentPlan(activeRes.data.data || null);
+
+
+            console.log('active Res : ', activeRes);
+            
             setBillingCycle(activeRes.data.data?.billingCycle || 'monthly')
         } catch {
             toast.error("Failed to load plans");
@@ -112,67 +129,147 @@ export default function BranchPlansPage() {
     };
 
     // ── Confirm assignment ─────────────────────────────────────────────────
-    const handlePayment = async (price: number, branchId: string, planId:string, planName:string, billingCycle:string) => {
+    // const handlePayment = async (price: number, branchId: string, planId: string, planName: string, billingCycle: string) => {
+    //     try {
+    //         setLoading(true);
+
+    //         // Load Razorpay SDK
+    //         const loaded = await loadRazorpayScript();
+
+    //         if (!loaded) {
+    //             alert("Unable to load Razorpay SDK");
+    //             return;
+    //         }
+
+    //         // Create Order from backend
+
+    //         const payload = {
+    //             amount: price,
+    //             branch_id: branchId,
+    //             plan_id: planId,
+    //             billingCycle: billingCycle
+    //         };
+    //         const resposne = await createOrderForPlan(payload)
+
+    //         console.log('res : ', resposne.data.data)
+    //         const order = resposne.data.data.order;
+    //         const branch = resposne.data.data.branch;
+
+    //         dispatch(clearActiveBranch());
+
+    //         dispatch(setActiveBranch(branch));
+
+
+
+    //         console.log('order: ', order);
+
+
+    //         // return;
+    //         const options = {
+    //             key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+
+    //             amount: order.amount,
+    //             currency: order.currency,
+    //             order_id: order.id,
+
+    //             name: "My Company",
+    //             description: "Payment",
+
+    //             handler: async function (resposne: any) {
+    //                 console.log("Payment Success", resposne);
+
+    //                 const base_url = process.env.NEXT_PUBLIC_API_URL;
+
+    //                 await fetch(`${base_url}/payments/verify-payment`, {
+    //                     method: "POST",
+    //                     headers: {
+    //                         "Content-Type": "application/json",
+    //                     },
+    //                     body: JSON.stringify(resposne),
+    //                 });
+
+    //                 alert("Payment Successful");
+    //                 toast.success(`${planName} assigned successfully`);
+    //             },
+
+    //             prefill: {
+    //                 name: "Sahil",
+    //                 email: "test@example.com",
+    //                 contact: "9999999999",
+    //             },
+
+    //             theme: {
+    //                 // color: "#3399cc",
+    //                 color: "#0f172a"
+    //             },
+    //         };
+
+    //         const razorpay = new window.Razorpay(options);
+
+    //         razorpay.on("payment.failed", function (response: any) {
+    //             console.error(response.error);
+    //             alert("Payment Failed");
+    //         });
+
+    //         razorpay.open();
+    //     } catch (err) {
+    //         console.error(err);
+    //         alert("Something went wrong");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+    const handlePayment = async (branchId: string, planId: string, planName: string, billingCycle: string) => {
         try {
             setLoading(true);
 
-            // Load Razorpay SDK
             const loaded = await loadRazorpayScript();
-
             if (!loaded) {
                 alert("Unable to load Razorpay SDK");
                 return;
             }
 
-            // Create Order from backend
+            const payload = { branch_id: branchId, plan_id: planId, billingCycle };
+            const response = await createSubscriptionForPlan(payload); // naya API call
 
-            const payload=  {
-                amount: price,
-                branch_id: branchId,
-                plan_id: planId,
-                billingCycle: billingCycle
-            };
-            const resposne = await createOrderForPlan(payload)
+            const subscription = response.data.data.subscription;
+            const branch = response.data.data.branch;
 
-            console.log('res : ',resposne.data.data)
-            const order = resposne.data.data.order;
-            const branch = resposne.data.data.branch;
+
+
+            console.log('response branch : ', branch);
+            
 
             dispatch(clearActiveBranch());
-
             dispatch(setActiveBranch(branch));
 
-
-            
-            console.log('order: ', order);
-
-
-            // return;
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
-                amount: order.amount,
-                currency: order.currency,
-                order_id: order.id,
-
+                subscription_id: subscription.id, // 👈 order_id ki jagah ye
                 name: "My Company",
-                description: "Payment",
+                description: `${planName} - ${billingCycle}`,
 
-                handler: async function (resposne: any) {
-                    console.log("Payment Success", resposne);
+                handler: async function (razorpayResponse: any) {
+                    console.log("Payment Success", razorpayResponse);
 
                     const base_url = process.env.NEXT_PUBLIC_API_URL;
 
-                    await fetch(`${base_url}/payments/verify-payment`, {
+                    const res = await fetch(`${base_url}/payments/verify-subscription`, {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify(resposne),
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(razorpayResponse),
                     });
 
-                    alert("Payment Successful");
-                    toast.success(`${planName} assigned successfully`);
+                    const result = await res.json();
+
+                    if (result.success) {
+                        alert("Subscription Activated");
+                        toast.success(`${planName} subscribed successfully`);
+                    } else {
+                        toast.error("Payment verification failed");
+                    }
                 },
 
                 prefill: {
@@ -181,10 +278,7 @@ export default function BranchPlansPage() {
                     contact: "9999999999",
                 },
 
-                theme: {
-                    // color: "#3399cc",
-                    color: "#0f172a"
-                },
+                theme: { color: "#0f172a" },
             };
 
             const razorpay = new window.Razorpay(options);
@@ -207,13 +301,12 @@ export default function BranchPlansPage() {
     const handleConfirmAssign = async () => {
         if (!confirmPlan) return;
 
-        const price =
-            billingCycle === "monthly" ? confirmPlan.monthlyPrice : confirmPlan.yearlyPrice;
+        const price = billingCycle === "monthly" ? confirmPlan.monthlyPrice : billingCycle === 'quarterly' ? confirmPlan.quarterlyPrice : billingCycle === 'halfYearly' ? confirmPlan.halfYearlyPrice : confirmPlan.yearlyPrice;
 
         try {
             setAssigning(true);
 
-            await handlePayment(price, branchId, confirmPlan._id, confirmPlan.name, billingCycle); // agar reject hua toh catch mein jayega            
+            await handlePayment(branchId, confirmPlan._id, confirmPlan.name, billingCycle); // agar reject hua toh catch mein jayega            
             setConfirmPlan(null);
             loadData();
         } catch (err: any) {
@@ -232,14 +325,14 @@ export default function BranchPlansPage() {
     };
 
 
-    const isCurrentPlan = (planId: string, cycle: "monthly" | "yearly") => {
+    const isCurrentPlan = (planId: string, cycle: "monthly" | "quarterly" | "halfYearly" | "yearly") => {
 
         return (
-            currentPlan?.plan_id === planId && 
-            currentPlan?.status === "active" &&
+            currentPlan?.plan_id === planId &&
+            currentPlan?.status === "created" &&
             currentPlan?.billingCycle === cycle
         )
-    } 
+    }
 
     // ── Render ────────────────────────────────────────────────────────────
     return (
@@ -262,7 +355,7 @@ export default function BranchPlansPage() {
                 </p>
 
                 {/* Current plan banner */}
-                {currentPlan?.status === "active" && (
+                {currentPlan?.status === "created" && (
                     <div style={{
                         display: "inline-flex", alignItems: "center", gap: 8, marginTop: 16,
                         background: "#ecfeff", border: "1.5px solid #a5f3fc", color: "#0e7490",
@@ -276,33 +369,68 @@ export default function BranchPlansPage() {
                     </div>
                 )}
             </div>
-
             {/* ── Billing toggle ── */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 36 }}>
-                <div style={{
-                    display: "inline-flex", background: "#f1f5f9", borderRadius: 12, padding: 4,
-                    border: "1.5px solid #e2e8f0",
-                }}>
-                    {(["monthly", "yearly"] as const).map((cycle) => (
+                <div
+                    style={{
+                        display: "inline-flex",
+                        background: "#f1f5f9",
+                        borderRadius: 12,
+                        padding: 4,
+                        border: "1.5px solid #e2e8f0",
+                        gap: 4,
+                        flexWrap: "wrap",
+                    }}
+                >
+                    {(
+                        [
+                            "monthly",
+                            "quarterly",
+                            "halfYearly",
+                            "yearly",
+                        ] as const
+                    ).map((cycle) => (
                         <button
                             key={cycle}
                             onClick={() => setBillingCycle(cycle)}
                             style={{
-                                padding: "8px 22px", borderRadius: 9, fontSize: 13, fontWeight: 700,
-                                border: "none", cursor: "pointer", transition: "all .15s",
-                                background: billingCycle === cycle ? "#fff" : "transparent",
-                                color: billingCycle === cycle ? "#059669" : "#64748b",
-                                boxShadow: billingCycle === cycle ? "0 2px 8px rgba(16,185,129,.15)" : "none",
+                                padding: "8px 18px",
+                                borderRadius: 9,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                border: "none",
+                                cursor: "pointer",
+                                transition: "all .15s",
+                                background:
+                                    billingCycle === cycle ? "#fff" : "transparent",
+                                color:
+                                    billingCycle === cycle ? "#059669" : "#64748b",
+                                boxShadow:
+                                    billingCycle === cycle
+                                        ? "0 2px 8px rgba(16,185,129,.15)"
+                                        : "none",
                             }}
                         >
-                            {cycle === "monthly" ? "Monthly" : "Yearly"}
+                            {cycle === "monthly" && "Monthly"}
+                            {cycle === "quarterly" && "Quarterly"}
+                            {cycle === "halfYearly" && "Half Yearly"}
                             {cycle === "yearly" && (
-                                <span style={{
-                                    marginLeft: 6, fontSize: 10, fontWeight: 700,
-                                    background: "#dcfce7", color: "#15803d", padding: "1px 6px", borderRadius: 99,
-                                }}>
-                                    Save
-                                </span>
+                                <>
+                                    Yearly
+                                    <span
+                                        style={{
+                                            marginLeft: 6,
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            background: "#dcfce7",
+                                            color: "#15803d",
+                                            padding: "1px 6px",
+                                            borderRadius: 99,
+                                        }}
+                                    >
+                                        Save
+                                    </span>
+                                </>
                             )}
                         </button>
                     ))}
@@ -331,7 +459,17 @@ export default function BranchPlansPage() {
                 /* ── Plan cards grid ── */
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
                     {plans.map((plan) => {
-                        const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
+                        const price =
+                            billingCycle === "monthly"
+                                ? plan.monthlyPrice
+                                : billingCycle === "quarterly"
+                                    ? plan.quarterlyPrice
+                                    : billingCycle === "halfYearly"
+                                        ? plan.halfYearlyPrice
+                                        : plan.yearlyPrice;
+
+
+
                         const isCurrent = isCurrentPlan(plan._id, billingCycle);
                         const isPopular = !plan.isCustom && plan.name.toLowerCase().includes("growth");
 
@@ -391,7 +529,14 @@ export default function BranchPlansPage() {
                                             ₹{(price ?? 0).toLocaleString("en-IN")}
                                         </span>
                                         <span style={{ fontSize: 13, color: "#94a3b8" }}>
-                                            /{billingCycle === "monthly" ? "month" : "year"}
+                                            /
+                                            {billingCycle === "monthly"
+                                                ? "month"
+                                                : billingCycle === "quarterly"
+                                                    ? "3 months"
+                                                    : billingCycle === "halfYearly"
+                                                        ? "6 months"
+                                                        : "year"}
                                         </span>
                                     </div>
                                 </div>
@@ -500,8 +645,11 @@ export default function BranchPlansPage() {
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{confirmPlan.name}</span>
                                 <span style={{ fontSize: 16, fontWeight: 800, color: "#059669" }}>
-                                    ₹{((billingCycle === "monthly" ? confirmPlan.monthlyPrice : confirmPlan.yearlyPrice) ?? 0).toLocaleString("en-IN")}
-                                    <span style={{ fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>/{billingCycle === "monthly" ? "mo" : "yr"}</span>
+                                    {/* ₹{((billingCycle === "monthly" ? confirmPlan.monthlyPrice : confirmPlan.yearlyPrice) ?? 0).toLocaleString("en-IN")} */}
+                                    ₹{(confirmPriceMap[billingCycle] ?? 0).toLocaleString("en-IN")}
+                                    <span style={{ fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>
+                                        /{billingShortLabel[billingCycle]}
+                                    </span>
                                 </span>
                             </div>
                             <p style={{ fontSize: 12, color: "#94a3b8", margin: "6px 0 0" }}>
@@ -533,7 +681,7 @@ export default function BranchPlansPage() {
                         }}>
                             <SecondaryButton title="Cancel" onClick={() => setConfirmPlan(null)} />
                             <PrimaryButton
-                                title={assigning ? "Assigning…" : "Confirm & Assign"}
+                                title={assigning ? "Assigning…" : "Confirm & Subscribe"}
                                 disabled={assigning}
                                 onClick={handleConfirmAssign}
                                 icon={

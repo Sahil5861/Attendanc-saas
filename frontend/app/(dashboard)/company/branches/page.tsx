@@ -2,34 +2,23 @@
 
 import { useState, useEffect } from "react";
 
-import EmptyState from "@/components/branch/empty-state";
+import EmptyState from "@/components/common/EmptyState";
 import CompanyTable from "@/components/branch/branch-table";
 import { createBranch, deleteBranch,getBranches, updateBranch } from "@/services/company.service";
 import toast from "react-hot-toast";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
-
-import { useSelector } from "react-redux";
+import { useSelector , useDispatch} from "react-redux";
 import { RootState } from "@/store";
 
 import { usePermission } from "@/hooks/usePermission";
 import BranchModal from "@/components/branch/branch-modal";
-
-
-interface Branch {
-    _id: string;
-    branchOwnerName: string;
-    branchName: string;
-    location: string;
-    city: string;
-    state: string;
-    mobileNumber: string;
-    email: string;
-    password: string;
-    status?: boolean;
-}
+import { Branch } from "@/components/interface";
+import { Building2 } from "lucide-react";
+import { setActiveBranch } from "@/store/slices/branchSlice";
 
 
 
@@ -38,6 +27,8 @@ export default function BranchesPage() {
     const { can, initialized } = usePermission();
 
     const router = useRouter();
+
+    const dispatch = useDispatch();
 
     useEffect(() => {
 
@@ -140,7 +131,14 @@ export default function BranchesPage() {
     };
 
     const handleView = (branch: any)=>{
-        router.push(`/company/branches/${branch._id}`);
+        // router.push(`/company/branches/${branch._id}`);
+
+        if (!branch) return;
+
+        localStorage.setItem("activeBranch", JSON.stringify(branch));
+        Cookies.set("active_branch_id", branch._id, { expires: 7 });
+        dispatch(setActiveBranch(branch));
+        router.push("/branch/dashboard");
     }
 
     const handleEdit = (branch: any) => {
@@ -208,7 +206,10 @@ export default function BranchesPage() {
             {
                 branches.length === 0 ? (
                     <EmptyState
+                        title="Add Brancehs"
+                        subTitle="create new Branch for your company"
                         onCreate={handleCreate}
+                        icon={<Building2 className="h-full w-full" />}
                     />
                 ) : (
                     <CompanyTable

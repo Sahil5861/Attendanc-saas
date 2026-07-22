@@ -105,3 +105,8 @@ export const createPlan   = (data: any)              => api.post("/super-admin/p
 export const updatePlan   = (id: string, data: any)  => api.put(`/super-admin/plans/${id}`, data);
 export const deletePlan   = (id: string)             => api.delete(`/super-admin/plans/${id}`);
 // getFeatures already exists from feature section
+
+
+
+// get subscriptions
+export const getSubscriptions = ()=> api.get("/super-admin/subscriptions");

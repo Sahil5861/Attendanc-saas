@@ -74,6 +74,11 @@ const userSchema = new mongoose.Schema(
       default: null
     },
 
+    notificationStatus :{
+      type:Boolean,
+      default: false
+    },
+
     lastLogin: {
       type: Date,
       default: null,

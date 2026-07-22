@@ -10,10 +10,7 @@ import ModalHeader from "../common/ModalHeader";
 import { getDepartments, getDesignations } from "@/services/branch.service";
 import { getCitiesByState, getStates } from "@/services/super-admin.service";
 import ImageUpload from "../common/ImageUpload";
-
-import {Employee} from './employee-table';
-
-
+import { Employee } from "../interface";
 
 interface Props {
   open: boolean;

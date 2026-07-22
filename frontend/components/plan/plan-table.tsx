@@ -5,15 +5,8 @@ import Header from "./plan-header";
 import Button from "../common/Button";
 import Can from "../common/Can";
 import { Edit, Edit2, Pencil, PencilIcon } from "lucide-react";
+import { Plan } from "../interface";
 
-interface Plan {
-  _id: string;
-  name: string;
-  isCustom: boolean;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  status: boolean;
-}
 
 interface Props {
   plans: Plan[];

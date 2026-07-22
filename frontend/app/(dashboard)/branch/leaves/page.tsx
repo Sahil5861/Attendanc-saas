@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { getLeaves } from "@/services/branch.service";
+import { BriefcaseBusiness, CalendarCheck } from "lucide-react";
 
 
 export default function LeavePage() {
@@ -98,15 +99,17 @@ export default function LeavePage() {
     return (
         <>
             {
-                leaves.length == 0 ? (
+                leaves.length === 0 ? (
                     <EmptyState
                         title="No Leaves requested yet"
+                        icon={<CalendarCheck className="h-full w-full"/>}
                         // buttonText="Add"
                         // onCreate={handleCreate}
 
                     />
                 ) : (
-                    <Table                        
+                    <Table       
+                                         
                         leaves={leaves}        
                     />
                 )

@@ -23,6 +23,7 @@ import {
 import SalaryModal from "@/components/employee/employee-salary";
 import { log } from "node:console";
 import { getImageUrl } from "@/constants/helper";
+import { Users } from "lucide-react";
 
 
 const defaultForm: any = {
@@ -286,6 +287,7 @@ export default function EmployeePage() {
           subTitle="Create Your first Employee"
           buttonText="Add"
           onCreate={handleCreate}
+          icon={<Users className="h-full w-full"/>}
         />
       ) : (
         <Table

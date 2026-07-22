@@ -14,6 +14,7 @@ const masters = require("../../constants/masters")
 const Role = require("../../models/Role");
 const State = require("../../models/State");
 const City = require("../../models/City");
+const BranchSubscription = require("../../models/BranchSubscription");
 
 
 exports.getCompanies = async (req, res) => {
@@ -454,9 +455,9 @@ exports.getCompanyBranches = async (req, res) => {
 
         const branchesWithPlans = await Promise.all(
             branches.map(async (branch) => {
-                const realation = await BranchPlanRelation.findOne({
+                const realation = await BranchSubscription.findOne({
                     branch_id: branch._id,
-                    status: 'active'
+                    status: 'created'
                 }).populate({
                     path: 'plan_id',
                     populate: {

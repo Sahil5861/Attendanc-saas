@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const State = require("../models/State");
 const City = require("../models/City");
+const User = require("../models/User");
 
 const auth =
     require("../middleware/auth.middleware");
@@ -108,29 +109,47 @@ router.post("/cities-by-state/:id", async (req, res) => {
 
 // send notification api :
 
-const admin = require("../config/firebase");
+// const admin = require("../config/firebase");
+const { messaging } = require("../config/firebase"); // adjust path
 
-exports.sendNotification = async(req,res)=>{
+
+
+router.post("/send-notification", async(req,res)=>{
 
     const token=req.body.token;
 
-    const message={
+    const user = await User.findOne({
+        fcmToken : token
+    });
 
-        notification:{
-            title:"Attendance",
-            body:"You have successfully checked in."
-        },
+    if(user?.notificationStatus === false) {
+        return res.status(400).json({
+            success: false, message: 'Notificatiosn are disbaled for this user !',
+        });
+    }
 
-        token:token
 
-    };
+    if (user?.fcmToken && user?.notificationStatus === true) {
+        const message={
+    
+            notification:{
+                title:"Attendance",
+                body:"You have successfully checked in."
+            },
+    
+            token:token
+        };
+        await messaging.send(message);
+    }
 
-    await admin.messaging().send(message);
+
+    // await admin.messaging().send(message);
 
     res.json({
         success:true
     });
 
-}
+});
+
 
 module.exports = router;

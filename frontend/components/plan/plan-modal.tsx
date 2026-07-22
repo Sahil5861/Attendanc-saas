@@ -14,8 +14,7 @@ interface Feature {
   type: string;            // "limit" | "module" | ...
   status: boolean;
   value: string;
-  monthlyPrice?: number;
-  yearlyPrice?: number;
+  price?: number;
 }
 
 interface Company {
@@ -28,14 +27,12 @@ interface Branch {
   branchName: string;
 }
 
-// What actually gets stored per selected feature on the form
-// Matches the DB shape: { feature_id, type, limit, _id? }
-// _id here is the relation sub-document's own id (only present when editing
-// a plan that already has it from the DB) — NOT the feature's id.
+
 interface PlanFeature {
   feature_id: string;
   type: string;
   limit?: string;
+  price?: number;
   _id?: string;
 }
 
@@ -46,6 +43,8 @@ interface Props {
     name: string;
     description: string;
     monthlyPrice: number;
+    quaterlyPrice: number;
+    halfYearlyPrice: number;
     yearlyPrice: number;
     isCustom: boolean;
     status: boolean;
@@ -154,9 +153,11 @@ export default function PlanModal({ open, mode = "create", form, setForm, onClos
     const selectedFeatureData = features.filter((f) =>
       selectedFeatures.some((sf) => normalizeId(sf.feature_id) === f._id)
     );
-    const monthlyPrice = selectedFeatureData.reduce((sum, f) => sum + Number(f.monthlyPrice || 0), 0);
-    const yearlyPrice  = selectedFeatureData.reduce((sum, f) => sum + Number(f.yearlyPrice || 0), 0);
-    return { monthlyPrice, yearlyPrice };
+    const monthlyPrice = selectedFeatureData.reduce((sum, f) => sum + Number(f.price || 0), 0);
+    const quaterlyPrice  = selectedFeatureData.reduce((sum, f) => sum + Number(f.price || 0), 0) * 3;
+    const halfYearlyPrice  = selectedFeatureData.reduce((sum, f) => sum + Number(f.price || 0), 0) * 6;
+    const yearlyPrice  = selectedFeatureData.reduce((sum, f) => sum + Number(f.price || 0), 0) * 12;
+    return { monthlyPrice, yearlyPrice, quaterlyPrice, halfYearlyPrice };
   };
 
   // ── Toggle a single feature on/off ──────────────────────────────────────
@@ -175,6 +176,7 @@ export default function PlanModal({ open, mode = "create", form, setForm, onClos
               type: feature.type,
               // limit-type features always carry a limit key (blank until filled)
               limit: feature.type === "limit" ? "" : "",
+              price: feature.price
             },
           ];
 
@@ -236,7 +238,7 @@ export default function PlanModal({ open, mode = "create", form, setForm, onClos
 
   const selectedFeatures = form.features || [];
 
-  console.log('selectedFeatures jjjjj' , selectedFeatures);
+  console.log('selectedFeatures' , selectedFeatures);
   
   const selectedCount = selectedFeatures.length;
   const selectedFeatureIds = selectedFeatures.map((f) => normalizeId(f.feature_id));
@@ -367,11 +369,26 @@ export default function PlanModal({ open, mode = "create", form, setForm, onClos
           )}
 
           {/* Row 2: Prices + Status */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
             <CustomInput
               label="Monthly Price"
               value={form.monthlyPrice}
               onChange={(e) => setForm((p: any) => ({ ...p, monthlyPrice: Number(e.target.value) }))}
+              placeholder="100"
+              readonly
+            />
+            <CustomInput
+              label="Quaterly Price"
+              placeholder="300"
+              value={form.quaterlyPrice}
+              readonly
+              onChange={(e) => setForm((p: any) => ({ ...p, quaterlyPrice: Number(e.target.value) }))}
+            />
+
+            <CustomInput
+              label="Half Yearly Price"
+              value={form.halfYearlyPrice}
+              onChange={(e) => setForm((p: any) => ({ ...p, halfYearlyPrice: Number(e.target.value) }))}
               placeholder="499"
               readonly
             />
@@ -504,8 +521,7 @@ export default function PlanModal({ open, mode = "create", form, setForm, onClos
                           </div>
 
                           <div className="flex gap-3 mt-1 text-xs text-slate-500">
-                            <span>₹{feature.monthlyPrice || 0}/month</span>
-                            <span>₹{feature.yearlyPrice || 0}/year</span>
+                            <span>₹{feature.price || 0}/month</span>
                           </div>
 
                           {/* Limit input — only when type is "limit" AND feature is checked */}

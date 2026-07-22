@@ -1,5 +1,7 @@
 const Branch = require("../../models/Branch");
+const Company = require("../../models/Company");
 const BranchSettings = require("../../models/BranchSettings");
+const CompanySettings = require("../../models/CompanySettings");
 
 exports.saveBranchSettings = async (req, res) => {
     try {
@@ -162,6 +164,138 @@ exports.getBranchSettings = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Internal server error.",
+        });
+    }
+};
+
+
+
+exports.saveCompanySettings = async (req, res) => {
+    try {
+
+        const {
+            companyName,
+            email,
+            phone,
+            address,
+            city,
+            state,
+            country,
+            latitude,
+            longitude,
+            postalCode,
+            timezone,
+            currency,
+            dateFormat,
+            timeFormat,
+            logo,
+            gst,
+        } = req.body;
+
+        const companyId = req.user.companyId;
+
+        const settings = await CompanySettings.findOneAndUpdate(
+            {
+                companyId,
+            },
+            {
+                companyId,
+                companyName,
+                email,
+                phone,
+                address,
+                city,
+                state,
+                country,
+                latitude,
+                longitude,
+                postalCode,
+                timezone,
+                currency,
+                dateFormat,
+                timeFormat,
+                logo,   
+                gst           
+            },
+            {
+                new: true,
+                upsert: true,
+                runValidators: true,
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Branch settings saved successfully.",
+            data: settings,
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+
+exports.getCompanySettings = async (req, res) => {
+    try {
+
+        const companyId = req.user.companyId;
+
+
+        const settings = await CompanySettings.findOne({            
+            companyId,
+        });
+
+        if (settings) {
+
+            return res.status(200).json({
+                success: true,
+                data: settings,
+            });
+        }
+        else {
+            const company = await Company.findById(companyId);
+
+            const my_data = {
+                companyName: company.companyName,
+                email: company.email,
+                phone: company.phone,
+                address: company.address,
+                city: company.city,
+                state: company.state,
+                country: "India",
+                postalCode: null,
+                timezone: "Asia/Kolkata",
+                currency: "INR",
+                dateFormat: "DD/MM/YYYY",
+                gst: company.gst,
+                timeFormat: "12",
+                logo: "",
+                startTime: "",
+                endTime: "",
+                recess: "",
+                latitude: null,
+                longitude: null,
+            }
+
+            return res.status(200).json({
+                success: true, data: my_data
+            })
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message,
         });
     }
 };

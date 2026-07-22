@@ -11,7 +11,7 @@ import {
     deletePlan,
 } from "@/services/super-admin.service";
 import toast from "react-hot-toast";
-import EmptyState from "@/components/plan/empty-state";
+import EmptyState from "@/components/common/EmptyState";
 
 
 const defaultForm = {
@@ -93,6 +93,7 @@ export default function PlansPage() {
                     feature_id : feature.feature_id?._id,
                     type: feature.type,
                     limit: feature.limit || '',
+                    price: feature.price || '',
                 })
             ),
         });
@@ -147,7 +148,11 @@ export default function PlansPage() {
         <>
 
             {plans.length == 0  ? (
-                <EmptyState onCreate={handleCreate}/>
+                <EmptyState
+                    title="No Plans Found"
+                    subTitle="Create your first plan"
+                    buttonText="Add"
+                    onCreate={handleCreate}/>
             ) : (
 
                 <Table

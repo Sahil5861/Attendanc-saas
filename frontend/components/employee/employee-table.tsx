@@ -7,45 +7,9 @@ import Button from "../common/Button";
 import CustomToggle from "../common/CustomToggle";
 import { updateEmployeeStatus } from "@/services/branch.service";
 import toast from "react-hot-toast";
+import { Employee } from "../interface";
 
-export interface Employee {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  gender: string;
-  dateOfBirth: string;
-  image: File | null | string;
 
-  designation: {
-    _id: string;
-    name: string;
-  };
-  department: {
-    _id: string;
-    name: string;
-  };
-  joiningDate: string;
-  employmentType: string;
-
-  basicSalary: number;
-  salaryType: string;
-
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  pincode: string;
-
-  shiftName: string;
-  shiftStartTime: string;
-  shiftEndTime: string;
-
-  password: string;
-  isLoginEnabled: boolean;
-  status: boolean;
-}
 interface Props {
   employees: Employee[];
   loading: boolean;

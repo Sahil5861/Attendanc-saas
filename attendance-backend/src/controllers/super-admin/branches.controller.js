@@ -6,6 +6,9 @@ const Company = require("../../models/Company");
 const Role = require("../../models/Role");
 const Plan = require("../../models/Plan");
 const BranchPlanRelation = require("../../models/BranchPlanRelation");
+const BranchSubscription = require("../../models/BranchSubscription");
+
+
 const Designation = require("../../models/Designation");
 const Department = require("../../models/Department");
 
@@ -14,7 +17,7 @@ const Team = require("../../models/Team");
  
 
 
-
+ 
 
 exports.getCompanyBranches = async(req, res)=>{
     try {        
@@ -308,17 +311,31 @@ exports.getPlans = async(req,res)=>{
 
 
 // GET /branches/:branchId/active-plan
+// exports.getBranchActivePlan = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const relation = await BranchPlanRelation.findOne({
+//       branch_id: id,
+//       status: "active",
+//     }).lean();
+ 
+//     return res.status(200).json({ status: true, data: relation || null });
+//   } catch (err) {
+
+//     console.error(err);
+//     return res.status(500).json({ status: false, message: err.message });
+//   }
+// };
+
+
 exports.getBranchActivePlan = async (req, res) => {
   try {
     const { id } = req.params;
 
-
-    console.log('req :', req);
-    
- 
-    const relation = await BranchPlanRelation.findOne({
+    const relation = await BranchSubscription.findOne({
       branch_id: id,
-      status: "active",
+      status: "created",
     }).lean();
  
     return res.status(200).json({ status: true, data: relation || null });

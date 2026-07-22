@@ -14,8 +14,7 @@ interface Props {
         description: string;
         type: string;
         value?: string | number;
-        monthlyPrice?: string | number;
-        yearlyPrice?: string | number;
+        price?: string | number;
         status: Boolean;
     };
     mode?: "create" | "edit";
@@ -141,7 +140,7 @@ export default function FeatureModal({
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr",
+                            gridTemplateColumns: "1fr",
                             gap: 16,
                         }}
                     >
@@ -152,29 +151,14 @@ export default function FeatureModal({
 
                         <CustomInput
                             label="Monthly Price" placeholder="99" type="number"
-                            value={form.monthlyPrice}
+                            value={form.price}
                             onChange={(e) =>
                                 setForm((prev: any) => ({
                                     ...prev,
-                                    monthlyPrice: Number(e.target.value),
+                                    price: Number(e.target.value),
                                 }))
                             }
 
-                        />
-
-                        {/* Yearly Price */}
-
-                        <CustomInput
-                            label="Annual Price"
-                            type="number"
-                            value={form.yearlyPrice}
-                            onChange={(e) =>
-                                setForm((prev: any) => ({
-                                    ...prev,
-                                    yearlyPrice: Number(e.target.value),
-                                }))
-                            }
-                            placeholder="999"
                         />
 
                         <CustomSelect

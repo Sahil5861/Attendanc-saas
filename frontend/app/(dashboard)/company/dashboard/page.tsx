@@ -90,6 +90,9 @@ export default function SuperAdminDashboard() {
         const res = await loadCompanyDashboardData(companyId);
         const d = res?.data?.data ?? {};
         setBranches(d.branches ?? []);
+
+        console.log('Branches : ', d.branches);
+        
       } catch (err) {
         console.error("[Dashboard] fetch error:", err);
       } finally {
