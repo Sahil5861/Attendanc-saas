@@ -131,7 +131,7 @@ export default function AttendancePage() {
     const branchId = getActiveBranchId();
 
     return holidays.find((h) => {
-      if (h.status !== "active") return false;
+      if (h.status !== true) return false;
 
       // Branch eligibility check
       const branchMatches =

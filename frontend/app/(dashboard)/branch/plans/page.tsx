@@ -658,7 +658,7 @@ export default function BranchPlansPage() {
                         </div>
 
                         {/* Warning if replacing existing plan */}
-                        {currentPlan?.status === "active" && (
+                        {currentPlan?.status === "created" && (
                             <div style={{
                                 margin: "0 28px 20px", padding: "10px 14px",
                                 background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 10,

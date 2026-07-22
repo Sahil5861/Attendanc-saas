@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import EmptyState from "@/components/common/EmptyState";
-import Table, {Employee} from "@/components/employee/employee-table";
+import Table from "@/components/employee/employee-table";
+import { Employee } from "@/components/interface";
 import toast from "react-hot-toast";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 

@@ -132,7 +132,7 @@ export default function Table({ holiday, onCreate, onEdit, onDelete }: Props) {
                 const isLast = i === paginated.length - 1;
                 const avatar = avatarColors[i % avatarColors.length];
                 const globalIndex = (page - 1) * pageSize + i + 1;
-                const isActive = holiday.status === "active";
+                const isActive = holiday.status === true;
                 const typeStyle = typeStyles[holiday.type] ?? typeStyles.custom;
 
                 return (

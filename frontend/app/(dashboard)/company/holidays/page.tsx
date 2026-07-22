@@ -20,7 +20,7 @@ export default function HolidaysPage() {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [mode, setMode] = useState<"create" | "edit">("create");
 
-    const [form, setForm] = useState<Holiday | null>(defaultForm);
+    const [form, setForm] = useState<Holiday>(defaultForm);
 
 
     const fetchBranches = async () => {

@@ -13,14 +13,14 @@ export interface Holiday {
     title: string;
     slug: string;
     description: string;
-    type: 'national' | 'festival' | 'custom';
+    type: string;
     date: string;
     isPaid: boolean;
     isOptional: boolean;
     appliesToAllBranches: boolean;
     branchIds: string[];
     isRecurring: boolean;
-    status: 'active' | 'inactive';
+    status: boolean;
     createdBy: string;
     notes: string;
 }

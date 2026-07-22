@@ -18,7 +18,7 @@ interface Props {
     branches?: Branch[]; // optional list, used only when appliesToAllBranches is false
 }
 
-export const defaultForm = {
+export const defaultForm: Holiday = {
     _id: "",
     companyId: "",
 
@@ -40,7 +40,7 @@ export const defaultForm = {
 
     isRecurring: true, // har saal same date par
 
-    status: "active", // active | inactive
+    status: true, // active | inactive
 
     createdBy: "",
 
@@ -117,13 +117,7 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit, br
                                     { label: "Custom", value: "custom" },
                                 ]}
                             />
-
-                            {/* <CustomInput
-                                label="Date"
-                                type="date"
-                                value={form.date}
-                                onChange={(e) => update({ date: e.target.value })}
-                            /> */}
+                            
                             <CustomDatePicker
                                 label="Date"
                                 placeholder="Select Date"                            
@@ -134,7 +128,7 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit, br
                             <CustomSelect
                                 label="Paid / Unpaid"
                                 value={form.isPaid}
-                                onChange={(e) => update({ isPaid: e.target.value === "true" || e.target.value === true })}
+                                onChange={(e) => update({ isPaid: e.target.value === 'true' })}
                                 options={[
                                     { label: "Paid", value: true },
                                     { label: "Unpaid", value: false },
@@ -144,7 +138,7 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit, br
                             <CustomSelect
                                 label="Optional"
                                 value={form.isOptional}
-                                onChange={(e) => update({ isOptional: e.target.value === "true" || e.target.value === true })}
+                                onChange={(e) => update({ isOptional: e.target.value === 'true' })}
                                 options={[
                                     { label: "Mandatory", value: false },
                                     { label: "Optional", value: true },
@@ -154,7 +148,7 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit, br
                             <CustomSelect
                                 label="Recurring Yearly"
                                 value={form.isRecurring}
-                                onChange={(e) => update({ isRecurring: e.target.value === "true" || e.target.value === true })}
+                                onChange={(e) => update({ isRecurring: e.target.value === 'true' })}
                                 options={[
                                     { label: "Yes, every year", value: true },
                                     { label: "No, one-time", value: false },
@@ -164,10 +158,10 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit, br
                             <CustomSelect
                                 label="Status"
                                 value={form.status}
-                                onChange={(e) => update({ status: e.target.value })}
+                                onChange={(e) => update({ status: e.target.value === 'true' })}
                                 options={[
-                                    { label: "Active", value: "active" },
-                                    { label: "Inactive", value: "inactive" },
+                                    { label: "Active", value: true },
+                                    { label: "Inactive", value: false },
                                 ]}
                             />
 
@@ -175,8 +169,8 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit, br
                                 label="Applies To"
                                 value={form.appliesToAllBranches}
                                 onChange={(e) => update({
-                                    appliesToAllBranches: e.target.value === "true" || e.target.value === true,
-                                    branchIds: (e.target.value === "true" || e.target.value === true) ? [] : form.branchIds,
+                                    appliesToAllBranches: e.target.value === "true",
+                                    branchIds: (e.target.value === "true") ? [] : form.branchIds,
                                 })}
                                 options={[
                                     { label: "All Branches", value: true },
@@ -223,20 +217,7 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit, br
                             )}
 
                             <div style={{ gridColumn: "1 / -1" }}>
-                                {/* <label style={{ fontSize: 13, fontWeight: 600, color: "#065f46", marginBottom: 6, display: "block" }}>
-                                    Description
-                                </label>
-                                <textarea
-                                    value={form.description}
-                                    onChange={(e) => update({ description: e.target.value })}
-                                    placeholder="Short description of the holiday"
-                                    rows={2}
-                                    style={{
-                                        width: "100%", borderRadius: 12, border: "1.5px solid #d1fae5",
-                                        padding: "10px 12px", fontSize: 14, resize: "vertical",
-                                    }}
-                                /> */}
-
+                            
                                 <CustomTextarea
                                     label="Description"
                                     value={form.description}
@@ -246,21 +227,7 @@ export default function Modal({ open, mode, form, setForm, onClose, onSubmit, br
                                 />
                             </div>
 
-                            <div style={{ gridColumn: "1 / -1" }}>
-                                {/* <label style={{ fontSize: 13, fontWeight: 600, color: "#065f46", marginBottom: 6, display: "block" }}>
-                                    Notes
-                                </label>
-                                <textarea
-                                    value={form.notes}
-                                    onChange={(e) => update({ notes: e.target.value })}
-                                    placeholder="Any internal notes"
-                                    rows={2}
-                                    style={{
-                                        width: "100%", borderRadius: 12, border: "1.5px solid #d1fae5",
-                                        padding: "10px 12px", fontSize: 14, resize: "vertical",
-                                    }}
-                                /> */}
-
+                            <div style={{ gridColumn: "1 / -1" }}>                                
                                 <CustomTextarea
                                     label="Notes"
                                     value={form.notes}

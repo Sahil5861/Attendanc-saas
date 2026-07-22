@@ -13,22 +13,9 @@ import {
 import toast from "react-hot-toast";
 
 import { getEmployeeAttendance } from "@/services/branch.service";
-import ModalFooter from "../common/ModalFooter";
 import ModalHeader from "../common/ModalHeader";
 
-import {Employee} from './employee-table';
-
-
-// interface Employee {
-//     _id: string;
-//     firstName: string;
-//     lastName: string;
-//     designation?: string | { title?: string };
-//     basicSalary: number;
-//     salaryType: string; // "monthly" | "daily" | "hourly"
-// }
-
-
+import { Employee } from "../interface";
 
 interface AttendanceRecord {
     _id: string;

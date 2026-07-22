@@ -18,6 +18,8 @@ const defaultForm = {
     name: "",
     description: "",
     monthlyPrice: 0,
+    quaterlyPrice: 0,
+    halfYearlyPrice:0,
     yearlyPrice: 0,
     isCustom: false,
     status: true,    
@@ -56,8 +58,6 @@ export default function PlansPage() {
             setLoading(true);
             const response = await getAllPlans();
             setPlans(response.data.data || []);
-
-            console.log(response.data.data);
             
         } catch {
             toast.error("Something went wrong!");
@@ -81,12 +81,14 @@ export default function PlansPage() {
             name: plan.name || "",
             description: plan.description || "",
             monthlyPrice: plan.monthlyPrice ?? 0,
+            quaterlyPrice: plan.quarterlyPrice ?? 0,
+            halfYearlyPrice: plan.halfYearlyPrice ?? 0,
             yearlyPrice: plan.yearlyPrice ?? 0,
             isCustom: plan.isCustom ?? false,
             status: plan.status ?? true,           
             company_id: plan.company_id ?? "",
             branch_id: plan.branch_id ?? "",
-            // features: (plan.features || []).map((feature : any) =>feature._id)
+
 
             features : (plan.features || []).map(
                 (feature : any) => ({
